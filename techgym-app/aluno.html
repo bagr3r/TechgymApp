@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Techgym - Meu Treino</title>
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#111827">
+  <link rel="stylesheet" href="./css/global.css">
+  <link rel="stylesheet" href="./css/aluno.css">
+</head>
+<body>
+  <div class="container">
+    <header class="top-bar">
+      <div>
+        <span style="font-size: 12px; color: var(--accent); font-weight: 700;">TECHGYM</span>
+        <h2 id="student-name">Carregando...</h2>
+      </div>
+      <button id="btn-logout" class="secondary btn-logout">Sair</button>
+    </header>
+
+    <!-- Card de Frequência / Check-in -->
+    <section class="card checkin-card">
+      <div>
+        <strong style="display: block; font-size: 15px;">Frequência no Mês</strong>
+        <span id="attendance-count" style="color: var(--text-secondary); font-size: 13px;">
+          0 treinos registrados
+        </span>
+      </div>
+      <button id="btn-checkin">Marcar Presença</button>
+    </section>
+
+    <!-- Abas de Divisão (Treino A, B, C...) -->
+    <nav id="division-tabs" class="tabs"></nav>
+
+    <!-- Lista de Exercícios -->
+    <main id="workout-list">
+      <p style="color: var(--text-secondary); text-align: center;">Buscando sua ficha...</p>
+    </main>
+  </div>
+
+  <!-- Botão Flutuante WhatsApp / Bot -->
+  <a id="whatsapp-link" href="#" target="_blank" rel="noopener" class="whatsapp-float">
+    WhatsApp / Ajuda
+  </a>
+
+  <script type="module" src="./js/student.js"></script>
+</body>
+</html>

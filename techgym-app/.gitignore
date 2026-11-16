@@ -1,0 +1,18 @@
+# Arquivos de ambiente e chaves locais
+.env
+.env.*
+*.local
+
+# Arquivos de sistema operacional
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Pastas de editores e IDEs
+.vscode/
+.idea/
+
+# Logs e backups temporários
+*.log
+*.bak
+*.sql
