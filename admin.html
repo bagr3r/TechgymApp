@@ -8,7 +8,6 @@
   <link rel="stylesheet" href="./css/admin.css">
 </head>
 <body>
-  <!-- TOPBAR COM A LOGO NO CANTO ESQUERDO (Igual ao protótipo) -->
   <header class="topbar">
     <div class="topbar-inner">
       <div class="brand-box">
@@ -24,9 +23,7 @@
     </div>
   </header>
 
-  <!-- ÁREA PRINCIPAL DIVIDIDA EM CARD LATERAL (3 BOTÕES) + CARD DE CONTEÚDO -->
   <div class="dashboard-shell">
-    <!-- Coluna Esquerda: Card de Navegação com os 3 Botões -->
     <aside class="nav-card">
       <span class="nav-section-title">MENU PRINCIPAL</span>
 
@@ -57,7 +54,6 @@
       </nav>
     </aside>
 
-    <!-- Coluna Direita: Card Amplo de Conteúdo -->
     <main class="content-card">
       <!-- ABA 1: MONTAR FICHAS -->
       <section id="tab-fichas" class="tab-panel active">
@@ -151,7 +147,7 @@
         <div class="content-header">
           <div>
             <h2>Gestão de <span class="text-red">Alunos</span></h2>
-            <p>Cadastre novos alunos e acompanhe a presença diária na academia.</p>
+            <p>Cadastre novos alunos definindo um usuário simples e o CPF como senha.</p>
           </div>
         </div>
 
@@ -162,12 +158,12 @@
               <input type="text" id="student-name" placeholder="Ex: João Silva" required>
             </div>
             <div class="form-group">
-              <label for="student-email">E-mail de Acesso</label>
-              <input type="email" id="student-email" placeholder="joao@email.com" required>
+              <label for="student-username">Usuário de Acesso</label>
+              <input type="text" id="student-username" placeholder="Ex: joao.silva" autocapitalize="none" required>
             </div>
             <div class="form-group">
-              <label for="student-password">Senha Inicial</label>
-              <input type="password" id="student-password" placeholder="Mínimo 6 dígitos" minlength="6" required>
+              <label for="student-cpf">CPF (Será a senha)</label>
+              <input type="text" id="student-cpf" inputmode="numeric" placeholder="000.000.000-00" required>
             </div>
           </div>
           <div class="builder-footer">
@@ -186,7 +182,7 @@
             <thead>
               <tr>
                 <th>Nome</th>
-                <th>E-mail</th>
+                <th>Usuário</th>
                 <th>Último Check-in</th>
                 <th>Ações</th>
               </tr>
@@ -265,7 +261,6 @@
     </main>
   </div>
 
-  <!-- Alternância suave entre as 3 abas -->
   <script>
     document.querySelectorAll('.side-btn').forEach(btn => {
       btn.addEventListener('click', () => {

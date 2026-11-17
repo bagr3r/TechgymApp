@@ -3,38 +3,73 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Techgym - Login</title>
+  <meta name="theme-color" content="#1C1E22">
+  <title>Techgym Academia — Acesso ao Sistema</title>
   <link rel="manifest" href="./manifest.json">
-  <meta name="theme-color" content="#111827">
+  <link rel="apple-touch-icon" href="./assets/icon-192.png">
   <link rel="stylesheet" href="./css/global.css">
+  <link rel="stylesheet" href="./css/login.css">
 </head>
-<body>
-  <div class="container" style="max-width: 420px; margin-top: 60px;">
-    <div class="card">
-      <h1 style="text-align: center; margin-bottom: 8px; color: var(--accent);">TECHGYM</h1>
-      <p style="text-align: center; color: var(--text-secondary); margin-bottom: 24px;">
-        Acesse sua ficha de treino e frequência
-      </p>
+<body class="login-page">
+  <main class="login-wrapper">
+    <section class="login-card">
+      <div class="login-brand">
+        <img src="./assets/logo-techgym.png" alt="Techgym Academia" class="login-logo"
+             onerror="this.style.display='none'; document.getElementById('login-logo-fallback').style.display='block';">
+        <div id="login-logo-fallback" class="login-logo-fallback" style="display:none;">
+          TECH<span>Gym</span>
+        </div>
+        <p class="login-subtitle">Entre com seu usuário e seu CPF como senha</p>
+      </div>
 
-      <form id="login-form">
-        <label for="email">E-mail de acesso</label>
-        <input type="email" id="email" placeholder="seu@email.com" required>
+      <div id="auth-error" class="auth-alert" role="alert" style="display: none;"></div>
 
-        <label for="password">Senha</label>
-        <input type="password" id="password" placeholder="••••••" required>
+      <form id="login-form" class="login-form">
+        <div class="form-group">
+          <label for="username">Usuário</label>
+          <input type="text" id="username" name="username" placeholder="Ex: joao.silva" autocomplete="username" autocapitalize="none" required>
+        </div>
 
-        <button type="submit" id="btn-login">Entrar</button>
+        <div class="form-group">
+          <label for="password">Senha (CPF)</label>
+          <div class="password-field">
+            <input type="password" id="password" name="password" inputmode="numeric" placeholder="Somente números ou 000.000.000-00" autocomplete="current-password" required>
+            <button type="button" id="toggle-password" class="btn-toggle-pass" aria-label="Mostrar ou ocultar senha">
+              Ver
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" id="login-btn" class="btn-primary btn-login">
+          Entrar no Sistema
+        </button>
       </form>
 
-      <p id="login-error" style="color: var(--danger); margin-top: 12px; text-align: center; font-size: 14px;"></p>
-    </div>
-  </div>
+      <footer class="login-footer">
+        <span>Techgym Academia &bull; Plataforma de Treinos</span>
+      </footer>
+    </section>
+  </main>
 
-  <script type="module" src="./js/auth.js"></script>
   <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js');
+    const toggleBtn = document.getElementById('toggle-password');
+    const passInput = document.getElementById('password');
+    if (toggleBtn && passInput) {
+      toggleBtn.addEventListener('click', () => {
+        const isPassword = passInput.type === 'password';
+        passInput.type = isPassword ? 'text' : 'password';
+        toggleBtn.textContent = isPassword ? 'Ocultar' : 'Ver';
+      });
     }
   </script>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(err => console.warn('SW:', err));
+      });
+    }
+  </script>
+  <script type="module" src="./js/auth.js"></script>
 </body>
 </html>

@@ -1,0 +1,147 @@
+/* ==========================================================================
+   TECHGYM LOGIN — TELA DE ENTRADA RESPONSIVA (PRETO FOSCO, BRANCO & VERMELHO)
+   ========================================================================== */
+
+body.login-page {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 16px;
+  background-color: #16171A;
+  background-image:
+    radial-gradient(circle at top right, rgba(214, 36, 42, 0.16), transparent 45%),
+    radial-gradient(circle at bottom left, rgba(255, 255, 255, 0.04), transparent 50%);
+}
+
+.login-wrapper {
+  width: 100%;
+  max-width: 420px;
+}
+
+.login-card {
+  background-color: #FAFAFB;
+  border: 1px solid #E2E4E9;
+  border-radius: 22px;
+  padding: 36px 30px 28px;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.35);
+  border-top: 4px solid #D6242A;
+}
+
+.login-brand {
+  text-align: center;
+  margin-bottom: 26px;
+}
+
+.login-logo {
+  max-width: 210px;
+  width: 100%;
+  height: auto;
+  margin: 0 auto 12px;
+  display: block;
+  object-fit: contain;
+}
+
+.login-logo-fallback {
+  font-size: 2rem;
+  font-weight: 900;
+  color: #1C1E22;
+  letter-spacing: 0.03em;
+  margin-bottom: 8px;
+}
+
+.login-logo-fallback span {
+  color: #D6242A;
+}
+
+.login-subtitle {
+  font-size: 0.9rem;
+  color: #646973;
+  line-height: 1.4;
+}
+
+.auth-alert {
+  background-color: rgba(214, 36, 42, 0.10);
+  color: #B81D22;
+  border: 1px solid rgba(214, 36, 42, 0.30);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 0.86rem;
+  font-weight: 600;
+  margin-bottom: 18px;
+  text-align: center;
+}
+
+.login-form .form-group {
+  margin-bottom: 16px;
+}
+
+.login-form label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #1C1E22;
+  margin-bottom: 6px;
+}
+
+.password-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-field input {
+  padding-right: 74px;
+}
+
+.btn-toggle-pass {
+  position: absolute;
+  right: 8px;
+  min-height: 32px;
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #646973;
+  background-color: #ECEEF2;
+  border: none;
+  border-radius: 8px;
+}
+
+.btn-toggle-pass:hover {
+  background-color: #DCDFE6;
+  color: #1C1E22;
+}
+
+.btn-login {
+  width: 100%;
+  margin-top: 8px;
+  min-height: 48px;
+  font-size: 1rem;
+  font-weight: 800;
+  border-radius: 12px;
+  background-color: #D6242A;
+  color: #FFFFFF;
+}
+
+.btn-login:hover {
+  background-color: #B81D22;
+}
+
+.login-footer {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #E5E7EB;
+  text-align: center;
+  font-size: 0.78rem;
+  color: #8A909B;
+}
+
+@media (max-width: 420px) {
+  .login-card {
+    padding: 28px 20px 22px;
+    border-radius: 18px;
+  }
+  .login-logo {
+    max-width: 180px;
+  }
+}
