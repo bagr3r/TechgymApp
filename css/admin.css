@@ -1,257 +1,396 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Techgym — Painel Administrativo</title>
-  <link rel="stylesheet" href="./css/global.css">
-  <link rel="stylesheet" href="./css/admin.css">
-</head>
-<body>
-  <div class="admin-layout">
-    <!-- Barra Lateral Fosca (Sidebar) -->
-    <aside class="sidebar">
-      <div class="sidebar-brand">
-        <!-- Espaço reservado para a logo da Techgym -->
-        <div class="brand-logo-placeholder" id="admin-logo-slot">
-          TECH<span>GYM</span>
-        </div>
-        <small>Gestão &amp; Treinos</small>
-      </div>
+/* ==========================================================================
+   TECHGYM ADMIN — TOPBAR + CARD LATERAL DE 3 BOTÕES + CARD DE CONTEÚDO
+   Paleta Fosca: Preto Carvão (#1C1E22), Branco Fosco (#FAFAFB) e Vermelho (#D6242A)
+   ========================================================================== */
 
-      <nav class="sidebar-nav" aria-label="Menu Administrativo">
-        <button type="button" class="nav-item active" data-tab="tab-fichas">
-          <span class="nav-step">01</span>
-          <span>Montar Fichas</span>
-        </button>
-        <button type="button" class="nav-item" data-tab="tab-alunos">
-          <span class="nav-step">02</span>
-          <span>Alunos &amp; Frequência</span>
-        </button>
-        <button type="button" class="nav-item" data-tab="tab-aparelhos">
-          <span class="nav-step">03</span>
-          <span>Aparelhos &amp; Exercícios</span>
-        </button>
-      </nav>
+:root {
+  --bg-canvas: #ECEEF2;         /* Fundo geral cinza-gelo fosco */
+  --surface-matte: #FAFAFB;     /* Branco fosco dos cards e topbar */
+  --surface-subtle: #F3F4F7;    /* Caixa interna dos formulários */
+  --black-matte: #1C1E22;       /* Preto fosco da identidade Techgym */
+  --black-soft: #2A2D34;
+  --red-techgym: #D6242A;       /* Vermelho oficial suavizado para tela */
+  --red-techgym-hover: #B81D22;
+  --red-soft: rgba(214, 36, 42, 0.10);
+  --border-matte: #DCDFE6;
+  --text-main: #1C1E22;
+  --text-muted: #646973;
+}
 
-      <div class="sidebar-footer">
-        <button type="button" id="logout-btn" class="btn-logout">Sair do Sistema</button>
-      </div>
-    </aside>
+body {
+  background-color: var(--bg-canvas);
+  color: var(--text-main);
+}
 
-    <!-- Área Principal -->
-    <main class="admin-main">
-      <!-- ABA 1: MONTAR FICHAS -->
-      <section id="tab-fichas" class="tab-panel active">
-        <div class="panel-header">
-          <div>
-            <h1>Montagem de <span class="text-red">Fichas</span></h1>
-            <p>Vincule exercícios, aparelhos e divisões de treino (A, B, C) para cada aluno.</p>
-          </div>
-        </div>
+/* 1. TOPBAR SUPERIOR COM LOGO NO CANTO ESQUERDO */
+.topbar {
+  background-color: var(--surface-matte);
+  border-bottom: 2px solid var(--border-matte);
+  padding: 12px 28px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  box-shadow: 0 2px 10px rgba(28, 30, 34, 0.04);
+}
 
-        <div class="workspace-grid">
-          <div class="card">
-            <h3>Adicionar Exercício na Ficha</h3>
-            <form id="workout-form">
-              <div class="form-group">
-                <label for="plan-student">Aluno</label>
-                <select id="plan-student" required>
-                  <option value="">Selecione o aluno...</option>
-                </select>
-              </div>
+.topbar-inner {
+  max-width: 1380px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
 
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="plan-division">Divisão</label>
-                  <select id="plan-division" required>
-                    <option value="A">Treino A</option>
-                    <option value="B">Treino B</option>
-                    <option value="C">Treino C</option>
-                    <option value="D">Treino D</option>
-                    <option value="E">Treino E</option>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label for="plan-exercise">Exercício / Aparelho</label>
-                  <select id="plan-exercise" required>
-                    <option value="">Selecione...</option>
-                  </select>
-                </div>
-              </div>
+.brand-box {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
 
-              <div class="form-row-3">
-                <div class="form-group">
-                  <label for="plan-sets">Séries</label>
-                  <input type="number" id="plan-sets" value="3" min="1" required>
-                </div>
-                <div class="form-group">
-                  <label for="plan-reps">Repetições</label>
-                  <input type="text" id="plan-reps" placeholder="10-12" required>
-                </div>
-                <div class="form-group">
-                  <label for="plan-rest">Descanso (s)</label>
-                  <input type="number" id="plan-rest" value="60" min="0">
-                </div>
-              </div>
+.brand-logo {
+  height: 44px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
 
-              <div class="form-group">
-                <label for="plan-notes">Observações (opcional)</label>
-                <input type="text" id="plan-notes" placeholder="Ex: Cadência lenta, drop-set na última...">
-              </div>
+.logo-text-fallback {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: var(--black-matte);
+}
 
-              <button type="submit" class="btn-primary full-width">Salvar na Ficha</button>
-            </form>
-          </div>
+.logo-text-fallback span {
+  color: var(--red-techgym);
+}
 
-          <div class="card">
-            <div class="card-header-inline">
-              <h3>Ficha Atual do Aluno</h3>
-              <span class="badge">Visualização em tempo real</span>
-            </div>
-            <div class="table-wrapper">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Divisão</th>
-                    <th>Aparelho</th>
-                    <th>Exercício</th>
-                    <th>Séries x Reps</th>
-                    <th>Ação</th>
-                  </tr>
-                </thead>
-                <tbody id="workout-plan-list">
-                  <tr><td colspan="5" class="empty-state">Selecione um aluno ao lado para visualizar a ficha.</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </section>
+.env-badge {
+  background-color: var(--black-matte);
+  color: #F5F6F8;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 999px;
+  letter-spacing: 0.03em;
+}
 
-      <!-- ABA 2: ALUNOS & FREQUÊNCIA -->
-      <section id="tab-alunos" class="tab-panel">
-        <div class="panel-header">
-          <div>
-            <h1>Gestão de <span class="text-red">Alunos</span></h1>
-            <p>Cadastre novos alunos e acompanhe o último check-in na academia.</p>
-          </div>
-        </div>
+.btn-topbar-logout {
+  background-color: transparent;
+  color: var(--text-main);
+  border: 1.5px solid var(--border-matte);
+  border-radius: 10px;
+  min-height: 38px;
+  padding: 6px 16px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
 
-        <div class="workspace-grid">
-          <div class="card">
-            <h3>Novo Aluno</h3>
-            <form id="student-form">
-              <div class="form-group">
-                <label for="student-name">Nome Completo</label>
-                <input type="text" id="student-name" placeholder="Ex: Carlos Eduardo" required>
-              </div>
-              <div class="form-group">
-                <label for="student-email">E-mail de Acesso</label>
-                <input type="email" id="student-email" placeholder="aluno@email.com" required>
-              </div>
-              <div class="form-group">
-                <label for="student-password">Senha Inicial</label>
-                <input type="password" id="student-password" placeholder="Mínimo 6 caracteres" minlength="6" required>
-              </div>
-              <button type="submit" class="btn-primary full-width">Cadastrar Aluno</button>
-            </form>
-          </div>
+.btn-topbar-logout:hover {
+  background-color: var(--black-matte);
+  color: #FFFFFF;
+  border-color: var(--black-matte);
+}
 
-          <div class="card">
-            <div class="card-header-inline">
-              <h3>Alunos Cadastrados</h3>
-            </div>
-            <div class="table-wrapper">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Nome</th>
-                    <th>E-mail</th>
-                    <th>Último Check-in</th>
-                    <th>Ações</th>
-                  </tr>
-                </thead>
-                <tbody id="students-list">
-                  <tr><td colspan="4" class="empty-state">Carregando alunos...</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </section>
+/* 2. SHELL PRINCIPAL: CARD LATERAL ESQUERDO + CARD DE CONTEÚDO À DIREITA */
+.dashboard-shell {
+  max-width: 1380px;
+  margin: 28px auto;
+  padding: 0 28px 48px;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 24px;
+  align-items: start;
+}
 
-      <!-- ABA 3: APARELHOS & EXERCÍCIOS -->
-      <section id="tab-aparelhos" class="tab-panel">
-        <div class="panel-header">
-          <div>
-            <h1>Aparelhos &amp; <span class="text-red">Exercícios</span></h1>
-            <p>Mapeie a numeração das máquinas da Techgym e vincule vídeos demonstrativos.</p>
-          </div>
-        </div>
+/* Card Lateral de Navegação */
+.nav-card {
+  background-color: var(--surface-matte);
+  border: 1px solid var(--border-matte);
+  border-radius: 18px;
+  padding: 20px 16px;
+  box-shadow: 0 6px 20px rgba(28, 30, 34, 0.04);
+  position: sticky;
+  top: 96px;
+}
 
-        <div class="workspace-grid">
-          <div class="card">
-            <h3>Cadastrar Exercício</h3>
-            <form id="exercise-form">
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="exercise-machine">Nº Aparelho</label>
-                  <input type="text" id="exercise-machine" placeholder="Ex: 04 ou Livre" required>
-                </div>
-                <div class="form-group">
-                  <label for="exercise-muscle">Grupo Muscular</label>
-                  <select id="exercise-muscle" required>
-                    <option value="Peito">Peito</option>
-                    <option value="Costas">Costas</option>
-                    <option value="Pernas">Pernas</option>
-                    <option value="Ombros">Ombros</option>
-                    <option value="Bíceps">Bíceps</option>
-                    <option value="Tríceps">Tríceps</option>
-                    <option value="Abdômen / Cardio">Abdômen / Cardio</option>
-                  </select>
-                </div>
-              </div>
+.nav-section-title {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  padding: 0 10px 14px;
+}
 
-              <div class="form-group">
-                <label for="exercise-name">Nome do Exercício</label>
-                <input type="text" id="exercise-name" placeholder="Ex: Puxada Frontal Aberta" required>
-              </div>
+.nav-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
 
-              <div class="form-group">
-                <label for="exercise-video">Link do YouTube (Opcional)</label>
-                <input type="url" id="exercise-video" placeholder="https://www.youtube.com/watch?v=...">
-              </div>
+/* Os 3 Botões da Barra Lateral */
+.side-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 14px;
+  padding: 14px 16px;
+  background-color: #FFFFFF;
+  border: 1.5px solid var(--border-matte);
+  border-radius: 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
 
-              <button type="submit" class="btn-primary full-width">Salvar Exercício</button>
-            </form>
-          </div>
+.side-btn:hover {
+  border-color: var(--black-matte);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(28, 30, 34, 0.06);
+}
 
-          <div class="card">
-            <div class="card-header-inline">
-              <h3>Catálogo da Academia</h3>
-            </div>
-            <div class="table-wrapper">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Máq.</th>
-                    <th>Exercício</th>
-                    <th>Grupo</th>
-                    <th>Vídeo</th>
-                    <th>Ação</th>
-                  </tr>
-                </thead>
-                <tbody id="exercises-list">
-                  <tr><td colspan="5" class="empty-state">Carregando catálogo...</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </section>
-    </main>
-  </div>
+.side-btn-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background-color: var(--surface-subtle);
+  color: var(--black-matte);
+  font-size: 0.85rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
 
-  <!-- Controle de alternância das 3 abas laterais -->
-  <script>
+.side-btn-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.side-btn-text strong {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--black-matte);
+  line-height: 1.2;
+}
+
+.side-btn-text small {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* Estado Ativo do Botão Lateral (Preto Fosco com Detalhe Vermelho) */
+.side-btn.active {
+  background-color: var(--black-matte);
+  border-color: var(--black-matte);
+  box-shadow: 0 8px 20px rgba(28, 30, 34, 0.16);
+}
+
+.side-btn.active .side-btn-icon {
+  background-color: var(--red-techgym);
+  color: #FFFFFF;
+}
+
+.side-btn.active .side-btn-text strong {
+  color: #FFFFFF;
+}
+
+.side-btn.active .side-btn-text small {
+  color: #B4B9C4;
+}
+
+/* 3. CARD PRINCIPAL DE CONTEÚDO */
+.content-card {
+  background-color: var(--surface-matte);
+  border: 1px solid var(--border-matte);
+  border-radius: 18px;
+  padding: 28px 32px;
+  min-height: 560px;
+  box-shadow: 0 6px 20px rgba(28, 30, 34, 0.04);
+}
+
+.tab-panel {
+  display: none;
+  animation: panelFade 0.22s ease;
+}
+
+.tab-panel.active {
+  display: block;
+}
+
+@keyframes panelFade {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.content-header {
+  margin-bottom: 22px;
+}
+
+.content-header h2 {
+  font-size: 1.55rem;
+  color: var(--black-matte);
+  margin-bottom: 4px;
+}
+
+.content-header p {
+  font-size: 0.92rem;
+  color: var(--text-muted);
+}
+
+/* Barra Horizontal de Criação (Tira a cara de formulário vertical engessado) */
+.inline-builder {
+  background-color: var(--surface-subtle);
+  border: 1px solid var(--border-matte);
+  border-radius: 14px;
+  padding: 20px;
+}
+
+.builder-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+.builder-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.span-2 {
+  grid-column: span 2;
+}
+
+.form-group label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--black-matte);
+  margin-bottom: 5px;
+}
+
+.builder-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.builder-footer .btn-primary {
+  background-color: var(--red-techgym);
+  border-radius: 10px;
+  padding: 10px 24px;
+}
+
+.builder-footer .btn-primary:hover {
+  background-color: var(--red-techgym-hover);
+}
+
+.divider {
+  height: 1px;
+  background-color: var(--border-matte);
+  margin: 26px 0 20px;
+}
+
+.table-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.table-section-header h3 {
+  font-size: 1.08rem;
+  color: var(--black-matte);
+}
+
+/* Tabela Limpa */
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid var(--border-matte);
+  background-color: #FFFFFF;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+thead {
+  background-color: var(--black-matte);
+  color: #F5F6F8;
+}
+
+th {
+  padding: 13px 16px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-align: left;
+  white-space: nowrap;
+}
+
+td {
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--border-matte);
+}
+
+tbody tr:hover {
+  background-color: #F8F9FB;
+}
+
+.empty-state {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 32px 16px;
+}
+
+/* Responsividade */
+@media (max-width: 1024px) {
+  .dashboard-shell {
+    grid-template-columns: 1fr;
+    padding: 0 16px 36px;
+  }
+  .nav-card {
+    position: static;
+  }
+  .nav-buttons {
+    flex-direction: row;
+    overflow-x: auto;
+  }
+  .side-btn {
+    min-width: 210px;
+  }
+  .builder-grid, .builder-grid-3 {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .topbar {
+    padding: 12px 16px;
+  }
+  .brand-logo {
+    height: 36px;
+  }
+  .env-badge {
+    display: none;
+  }
+  .content-card {
+    padding: 20px 16px;
+  }
+  .builder-grid, .builder-grid-3 {
+    grid-template-columns: 1fr;
+  }
+  .span-2 {
+    grid-column: span 1;
+  }
+}
