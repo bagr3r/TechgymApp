@@ -1,33 +1,26 @@
-// sw.js
-const CACHE_NAME = 'techgym-v1';
-const STATIC_ASSETS = [
-  './',
-  './index.html',
-  './aluno.html',
-  './admin.html',
-  './manifest.json',
-  './css/global.css',
-  './css/aluno.css',
-  './css/admin.css',
-  './js/config.js',
-  './js/auth.js',
-  './js/student.js',
-  './js/admin.js'
-];
+const CACHE_NAME = 'techgym-network-first-v10';
 
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
+    caches.keys().then((keys) =>
+      Promise.all(keys.map((key) => caches.delete(key)))
+    ).then(() => self.clients.claim())
   );
 });
 
 self.addEventListener('fetch', (event) => {
-  // Não faz cache das chamadas de API do Supabase (para sempre pegar treinos atualizados)
-  if (event.request.url.includes('supabase.co')) {
-    return;
-  }
-
+  if (event.request.method !== 'GET') return;
   event.respondWith(
-    caches.match(event.request).then((cached) => cached || fetch(event.request))
+    fetch(event.request)
+      .then((response) => {
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        return response;
+      })
+      .catch(() => caches.match(event.request))
   );
 });

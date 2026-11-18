@@ -2,48 +2,93 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Techgym - Meu Treino</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#1C1E22">
+  <title>Techgym Academia — Meu Treino</title>
   <link rel="manifest" href="./manifest.json">
-  <meta name="theme-color" content="#111827">
+  <link rel="apple-touch-icon" href="./assets/icon-192.png">
   <link rel="stylesheet" href="./css/global.css">
   <link rel="stylesheet" href="./css/aluno.css">
 </head>
-<body>
-  <div class="container">
-    <header class="top-bar">
-      <div>
-        <span style="font-size: 12px; color: var(--accent); font-weight: 700;">TECHGYM</span>
-        <h2 id="student-name">Carregando...</h2>
+<body class="student-page">
+  <!-- Header Mobile Compacto -->
+  <header class="mobile-header">
+    <div class="mobile-header-inner">
+      <div class="mobile-brand">
+        <img src="./assets/logo-techgym.png" alt="Techgym Academia" class="mobile-logo"
+             onerror="this.style.display='none'; document.getElementById('student-logo-fallback').style.display='block';">
+        <span id="student-logo-fallback" class="logo-text-fallback" style="display:none;">TECH<span>Gym</span></span>
       </div>
-      <button id="btn-logout" class="secondary btn-logout">Sair</button>
-    </header>
 
-    <!-- Card de Frequência / Check-in -->
-    <section class="card checkin-card">
-      <div>
-        <strong style="display: block; font-size: 15px;">Frequência no Mês</strong>
-        <span id="attendance-count" style="color: var(--text-secondary); font-size: 13px;">
-          0 treinos registrados
-        </span>
+      <button type="button" id="logout-btn" class="btn-mobile-logout">Sair</button>
+    </div>
+  </header>
+
+  <main class="student-container">
+    <!-- Card do Aluno + Check-in Diário -->
+    <section class="hero-card">
+      <div class="hero-info">
+        <span class="hero-greeting">Bora treinar,</span>
+        <h1 id="student-name-display">Carregando...</h1>
+        <p id="today-date-display" class="hero-date"></p>
       </div>
-      <button id="btn-checkin">Marcar Presença</button>
+
+      <button type="button" id="checkin-btn" class="btn-checkin">
+        <span id="checkin-icon">✓</span>
+        <span id="checkin-text">Fazer Check-in Hoje</span>
+      </button>
     </section>
 
-    <!-- Abas de Divisão (Treino A, B, C...) -->
-    <nav id="division-tabs" class="tabs"></nav>
+    <!-- Abas de Divisão de Treino (A, B, C...) -->
+    <nav id="division-tabs" class="division-tabs" aria-label="Divisões de treino">
+      <!-- Preenchido dinamicamente pelo aluno.js -->
+    </nav>
 
-    <!-- Lista de Exercícios -->
-    <main id="workout-list">
-      <p style="color: var(--text-secondary); text-align: center;">Buscando sua ficha...</p>
-    </main>
+    <!-- Barra de Progresso do Treino Atual -->
+    <div id="progress-bar-box" class="progress-box" style="display: none;">
+      <div class="progress-header">
+        <span id="progress-label">Progresso do treino</span>
+        <strong id="progress-count">0/0</strong>
+      </div>
+      <div class="progress-track">
+        <div id="progress-fill" class="progress-fill" style="width: 0%;"></div>
+      </div>
+    </div>
+
+    <!-- Lista de Cards de Exercícios -->
+    <section id="exercises-container" class="exercises-list">
+      <div class="loading-card">Carregando sua ficha de treino...</div>
+    </section>
+  </main>
+
+  <!-- Modal para Vídeo de Execução do YouTube -->
+  <div id="video-modal" class="modal-backdrop" style="display: none;" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="modal-exercise-title">Execução do Exercício</h3>
+        <button type="button" id="close-modal-btn" class="btn-close-modal" aria-label="Fechar vídeo">✕</button>
+      </div>
+      <div class="video-frame-wrapper">
+        <iframe id="youtube-iframe" src="" title="Vídeo demonstrativo" frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen></iframe>
+      </div>
+    </div>
   </div>
 
-  <!-- Botão Flutuante WhatsApp / Bot -->
-  <a id="whatsapp-link" href="#" target="_blank" rel="noopener" class="whatsapp-float">
-    WhatsApp / Ajuda
+  <!-- Botão Flutuante WhatsApp da Academia -->
+  <a id="whatsapp-float" href="#" target="_blank" rel="noopener noreferrer" class="whatsapp-fab" aria-label="Falar com a Techgym no WhatsApp">
+    <span>Suporte / Recepção</span>
   </a>
 
-  <script type="module" src="./js/student.js"></script>
+  <!-- Fallback imediato do botão Sair -->
+  <script>
+    document.getElementById('logout-btn')?.addEventListener('click', () => {
+      localStorage.clear();
+      sessionStorage.clear();
+      window.location.href = './index.html';
+    });
+  </script>
+  <script type="module" src="./js/aluno.js"></script>
 </body>
 </html>

@@ -1,82 +1,113 @@
-// js/student.js
+// @ts-check
 import { supabase, GYM_WHATSAPP, DEFAULT_WHATSAPP_MSG } from './config.js';
-import { logout } from './auth.js';
+import { checkAuth, logout } from './auth.js';
 
-let currentUser = null;
-let allWorkouts = [];
+const logoutBtn = document.getElementById('logout-btn');
+const studentNameDisplay = document.getElementById('student-name-display');
+const todayDateDisplay = document.getElementById('today-date-display');
+const checkinBtn = document.getElementById('checkin-btn');
+const checkinText = document.getElementById('checkin-text');
+const divisionTabs = document.getElementById('division-tabs');
+const exercisesContainer = document.getElementById('exercises-container');
+const progressBarBox = document.getElementById('progress-bar-box');
+const progressCount = document.getElementById('progress-count');
+const progressFill = document.getElementById('progress-fill');
+const whatsappFloat = document.getElementById('whatsapp-float');
+
+// Modal de vídeo
+const videoModal = document.getElementById('video-modal');
+const modalTitle = document.getElementById('modal-exercise-title');
+const youtubeIframe = document.getElementById('youtube-iframe');
+const closeModalBtn = document.getElementById('close-modal-btn');
+
+let currentStudentId = null;
+let allWorkoutItems = [];
 let activeDivision = null;
+const completedSet = new Set();
 
-document.getElementById('btn-logout').addEventListener('click', logout);
+if (logoutBtn) {
+  logoutBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    await logout();
+  });
+}
 
 // Configura link do WhatsApp
-const waLink = document.getElementById('whatsapp-link');
-waLink.href = `https://wa.me/${GYM_WHATSAPP}?text=${encodeURIComponent(DEFAULT_WHATSAPP_MSG)}`;
-
-async function init() {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) {
-    window.location.href = './index.html';
-    return;
-  }
-
-  currentUser = session.user;
-  await loadProfile();
-  await loadAttendance();
-  await loadWorkouts();
+if (whatsappFloat) {
+  const encodedMsg = encodeURIComponent(DEFAULT_WHATSAPP_MSG);
+  whatsappFloat.href = `https://wa.me/${GYM_WHATSAPP}?text=${encodedMsg}`;
 }
 
-async function loadProfile() {
-  const { data } = await supabase
-    .from('profiles')
-    .select('full_name')
-    .eq('id', currentUser.id)
-    .single();
-
-  if (data) {
-    document.getElementById('student-name').textContent = `Olá, ${data.full_name.split(' ')[0]}`;
-  }
+// Formata data atual
+if (todayDateDisplay) {
+  todayDateDisplay.textContent = new Date().toLocaleDateString('pt-BR', {
+    weekday: 'long',
+    day: '2-digit',
+    month: 'long'
+  });
 }
 
-async function loadAttendance() {
+// ==========================================================================
+// 1. CHECK-IN DIÁRIO
+// ==========================================================================
+function getTodayISO() {
   const now = new Date();
-  const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-  const today = now.toISOString().split('T')[0];
+  const offset = now.getTimezoneOffset() * 60000;
+  return new Date(now.getTime() - offset).toISOString().split('T')[0];
+}
 
+async function checkTodayAttendance(studentId) {
+  const today = getTodayISO();
   const { data, error } = await supabase
     .from('attendance')
-    .select('checkin_date')
-    .eq('student_id', currentUser.id)
-    .gte('checkin_date', firstDayOfMonth);
+    .select('id')
+    .eq('student_id', studentId)
+    .eq('check_in_date', today)
+    .maybeSingle();
 
   if (!error && data) {
-    document.getElementById('attendance-count').textContent = `${data.length} treino(s) neste mês`;
-    const alreadyCheckedIn = data.some(item => item.checkin_date === today);
-    const btnCheckin = document.getElementById('btn-checkin');
-
-    if (alreadyCheckedIn) {
-      btnCheckin.textContent = 'Treino Concluído ✓';
-      btnCheckin.disabled = true;
-      btnCheckin.style.opacity = '0.7';
-    }
+    markCheckinDone();
   }
 }
 
-document.getElementById('btn-checkin').addEventListener('click', async () => {
-  const btn = document.getElementById('btn-checkin');
-  btn.disabled = true;
-  btn.textContent = 'Salvando...';
+function markCheckinDone() {
+  if (!checkinBtn || !checkinText) return;
+  checkinBtn.classList.add('checked');
+  checkinBtn.disabled = true;
+  checkinText.textContent = 'Presença Registrada Hoje!';
+}
 
-  const { error } = await supabase
-    .from('attendance')
-    .insert({ student_id: currentUser.id });
+if (checkinBtn) {
+  checkinBtn.addEventListener('click', async () => {
+    if (!currentStudentId || checkinBtn.disabled) return;
+    checkinBtn.disabled = true;
+    if (checkinText) checkinText.textContent = 'Registrando...';
 
-  if (error) {
-    alert('Presença já registrada hoje ou erro de conexão.');
-  }
-  await loadAttendance();
-});
+    const { error } = await supabase.from('attendance').insert([{
+      student_id: currentStudentId,
+      check_in_date: getTodayISO()
+    }]);
 
-async function loadWorkouts() {
+    if (error) {
+      // Se já houver registro duplicado no mesmo dia, apenas marca como concluído
+      if (error.code === '23505') {
+        markCheckinDone();
+        return;
+      }
+      checkinBtn.disabled = false;
+      if (checkinText) checkinText.textContent = 'Fazer Check-in Hoje';
+      alert('Não foi possível registrar o check-in: ' + error.message);
+      return;
+    }
+
+    markCheckinDone();
+  });
+}
+
+// ==========================================================================
+// 2. CARREGAMENTO E RENDERIZAÇÃO DA FICHA
+// ==========================================================================
+async function loadStudentWorkout(studentId) {
   const { data, error } = await supabase
     .from('workout_plans')
     .select(`
@@ -84,113 +115,196 @@ async function loadWorkouts() {
       division,
       sets,
       reps,
+      rest_seconds,
       notes,
       exercises (
+        id,
         name,
         machine_number,
-        youtube_video_id
+        muscle_group,
+        video_url
       )
     `)
-    .eq('student_id', currentUser.id)
-    .order('id', { ascending: true });
+    .eq('student_id', studentId)
+    .order('division', { ascending: true });
 
-  if (!error && data) {
-    allWorkouts = data;
-    // Salva cópia offline para caso o Wi-Fi da academia falhe
-    localStorage.setItem('techgym_workout_cache', JSON.stringify(data));
-  } else {
-    // Fallback offline
-    const cached = localStorage.getItem('techgym_workout_cache');
-    if (cached) allWorkouts = JSON.parse(cached);
-  }
-
-  renderTabs();
-}
-
-function renderTabs() {
-  const tabsContainer = document.getElementById('division-tabs');
-  const listContainer = document.getElementById('workout-list');
-
-  if (allWorkouts.length === 0) {
-    listContainer.innerHTML = '<div class="card"><p>Você ainda não possui ficha cadastrada. Fale com seu instrutor!</p></div>';
+  if (error) {
+    if (exercisesContainer) {
+      exercisesContainer.innerHTML = `<div class="loading-card">Erro ao carregar treino: ${escapeHtml(error.message)}</div>`;
+    }
     return;
   }
 
-  const divisions = [...new Set(allWorkouts.map(w => w.division))];
-  if (!activeDivision || !divisions.includes(activeDivision)) {
-    activeDivision = divisions[0];
+  allWorkoutItems = data || [];
+
+  if (!allWorkoutItems.length) {
+    if (divisionTabs) divisionTabs.innerHTML = '';
+    if (exercisesContainer) {
+      exercisesContainer.innerHTML = `
+        <div class="loading-card">
+          Você ainda não possui uma ficha cadastrada.<br>
+          <small style="color: var(--text-gray);">Peça ao instrutor da Techgym para montar seu treino.</small>
+        </div>`;
+    }
+    return;
   }
 
-  tabsContainer.innerHTML = divisions.map(div => `
-    <button class="tab-btn ${div === activeDivision ? 'active' : ''}" data-div="${div}">
-      ${div}
+  // Descobre divisões únicas (A, B, C...)
+  const divisions = [...new Set(allWorkoutItems.map(item => item.division))].sort();
+  activeDivision = divisions[0];
+
+  renderDivisionTabs(divisions);
+  renderExercisesForDivision(activeDivision);
+}
+
+function renderDivisionTabs(divisions) {
+  if (!divisionTabs) return;
+  divisionTabs.innerHTML = divisions.map(div => `
+    <button type="button"
+            class="div-tab ${div === activeDivision ? 'active' : ''}"
+            data-div="${escapeHtml(div)}">
+      Treino ${escapeHtml(div)}
     </button>
   `).join('');
 
-  tabsContainer.querySelectorAll('.tab-btn').forEach(btn => {
+  divisionTabs.querySelectorAll('.div-tab').forEach(btn => {
     btn.addEventListener('click', () => {
-      activeDivision = btn.dataset.div;
-      renderTabs();
+      activeDivision = btn.getAttribute('data-div');
+      divisionTabs.querySelectorAll('.div-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderExercisesForDivision(activeDivision);
     });
   });
-
-  renderExercises();
 }
 
-function renderExercises() {
-  const listContainer = document.getElementById('workout-list');
-  const filtered = allWorkouts.filter(w => w.division === activeDivision);
+function renderExercisesForDivision(division) {
+  if (!exercisesContainer) return;
+  const items = allWorkoutItems.filter(item => item.division === division);
 
-  listContainer.innerHTML = filtered.map(item => {
-    const ex = item.exercises;
-    const hasVideo = ex.youtube_video_id && ex.youtube_video_id.trim() !== '';
+  updateProgress(items);
+
+  exercisesContainer.innerHTML = items.map(item => {
+    const ex = item.exercises || {};
+    const isDone = completedSet.has(item.id);
+    const embedUrl = getYoutubeEmbedUrl(ex.video_url);
 
     return `
-      <article class="card exercise-card">
-        <div class="exercise-header">
-          <h3 style="font-size: 17px;">${ex.name}</h3>
-          <span class="machine-badge">Aparelho #${ex.machine_number}</span>
+      <article class="exercise-card ${isDone ? 'completed' : ''}" data-item-id="${item.id}">
+        <div class="exercise-top">
+          <span class="machine-pill">MÁQ #${escapeHtml(ex.machine_number || 'LIVRE')}</span>
+          <span class="muscle-tag">${escapeHtml(ex.muscle_group || 'Geral')}</span>
         </div>
 
-        <p class="exercise-details">
-          <strong>${item.sets} séries</strong> × <strong>${item.reps} repetições</strong>
-        </p>
+        <h2 class="exercise-title">${escapeHtml(ex.name || 'Exercício')}</h2>
 
-        ${item.notes ? `<div class="exercise-notes">💡 ${item.notes}</div>` : ''}
+        <div class="metrics-row">
+          <div class="metric-item">
+            <small>Séries</small>
+            <strong>${item.sets}</strong>
+          </div>
+          <div class="metric-item">
+            <small>Repetições</small>
+            <strong>${escapeHtml(item.reps)}</strong>
+          </div>
+          <div class="metric-item">
+            <small>Descanso</small>
+            <strong>${item.rest_seconds || 60}s</strong>
+          </div>
+        </div>
 
-        ${hasVideo ? `
-          <button class="secondary btn-video" data-video="${ex.youtube_video_id}">
-            ▶ Ver Vídeo de Execução
+        ${item.notes ? `<div class="exercise-notes"><strong>Obs:</strong> ${escapeHtml(item.notes)}</div>` : ''}
+
+        <div class="exercise-actions">
+          ${embedUrl
+            ? `<button type="button" class="btn-video" onclick="openVideoModal('${escapeHtml(ex.name)}', '${embedUrl}')">▶ Ver Execução</button>`
+            : ''}
+          <button type="button" class="btn-done-toggle" onclick="toggleExerciseDone('${item.id}')">
+            ${isDone ? '✓ Concluído' : 'Marcar Feito'}
           </button>
-          <div class="video-slot hidden"></div>
-        ` : ''}
+        </div>
       </article>
     `;
   }).join('');
+}
 
-  // Carrega o iframe do YouTube apenas quando o aluno clicar (mantém o app ultraleve)
-  listContainer.querySelectorAll('.btn-video').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const slot = btn.nextElementSibling;
-      const videoId = btn.dataset.video;
+window.toggleExerciseDone = (itemId) => {
+  if (completedSet.has(itemId)) {
+    completedSet.delete(itemId);
+  } else {
+    completedSet.add(itemId);
+  }
+  renderExercisesForDivision(activeDivision);
+};
 
-      if (slot.classList.contains('hidden')) {
-        slot.innerHTML = `
-          <div class="video-container">
-            <iframe src="https://www.youtube-nocookie.com/embed/${videoId}?rel=0" 
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-              allowfullscreen loading="lazy"></iframe>
-          </div>
-        `;
-        slot.classList.remove('hidden');
-        btn.textContent = '▲ Fechar Vídeo';
-      } else {
-        slot.innerHTML = '';
-        slot.classList.add('hidden');
-        btn.textContent = '▶ Ver Vídeo de Execução';
-      }
-    });
+function updateProgress(items) {
+  if (!progressBarBox || !progressCount || !progressFill) return;
+  if (!items.length) {
+    progressBarBox.style.display = 'none';
+    return;
+  }
+  progressBarBox.style.display = 'block';
+  const doneCount = items.filter(i => completedSet.has(i.id)).length;
+  const pct = Math.round((doneCount / items.length) * 100);
+  progressCount.textContent = `${doneCount}/${items.length}`;
+  progressFill.style.width = `${pct}%`;
+}
+
+// ==========================================================================
+// 3. MODAL DO YOUTUBE (Converte links watch?v=, youtu.be/ e shorts/)
+// ==========================================================================
+function getYoutubeEmbedUrl(url) {
+  if (!url) return null;
+  const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([a-zA-Z0-9_-]{11})/);
+  return match ? `https://www.youtube.com/embed/${match[1]}?rel=0` : null;
+}
+
+window.openVideoModal = (title, embedUrl) => {
+  if (!videoModal || !youtubeIframe || !modalTitle) return;
+  modalTitle.textContent = title;
+  youtubeIframe.src = embedUrl;
+  videoModal.style.display = 'flex';
+};
+
+function closeVideoModal() {
+  if (!videoModal || !youtubeIframe) return;
+  youtubeIframe.src = '';
+  videoModal.style.display = 'none';
+}
+
+if (closeModalBtn) {
+  closeModalBtn.addEventListener('click', closeVideoModal);
+}
+
+if (videoModal) {
+  videoModal.addEventListener('click', (e) => {
+    if (e.target === videoModal) closeVideoModal();
   });
 }
 
-init();
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+// ==========================================================================
+// 4. INICIALIZAÇÃO
+// ==========================================================================
+(async function initStudentApp() {
+  const auth = await checkAuth('student');
+  if (!auth) return;
+
+  currentStudentId = auth.profile.id;
+  if (studentNameDisplay) {
+    studentNameDisplay.textContent = auth.profile.full_name || 'Aluno Techgym';
+  }
+
+  await Promise.all([
+    checkTodayAttendance(currentStudentId),
+    loadStudentWorkout(currentStudentId)
+  ]);
+})();
