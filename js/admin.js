@@ -1,8 +1,7 @@
-import { supabase } from './config.js';
+import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
 import { checkAuth, logout, normalizeUsernameToEmail, normalizeCpfPassword } from './auth.js';
 
-await checkAuth('admin');
-
+// Elementos globais
 const logoutBtn = document.getElementById('logout-btn');
 const workoutForm = document.getElementById('workout-form');
 const studentForm = document.getElementById('student-form');
@@ -14,19 +13,16 @@ const workoutPlanList = document.getElementById('workout-plan-list');
 const studentsList = document.getElementById('students-list');
 const exercisesList = document.getElementById('exercises-list');
 
+// 1. Registra o botão Sair imediatamente
 if (logoutBtn) {
-  logoutBtn.addEventListener('click', logout);
-}
-
-async function initAdminDashboard() {
-  await Promise.all([
-    loadExercises(),
-    loadStudents()
-  ]);
+  logoutBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    await logout();
+  });
 }
 
 // ==========================================================================
-// APARELHOS E EXERCÍCIOS (ABA 03)
+// 2. APARELHOS E EXERCÍCIOS (ABA 03)
 // ==========================================================================
 async function loadExercises() {
   const { data, error } = await supabase
@@ -36,6 +32,7 @@ async function loadExercises() {
 
   if (error) {
     console.error('Erro ao carregar exercícios:', error.message);
+    exercisesList.innerHTML = `<tr><td colspan="5" class="empty-state">Erro: ${escapeHtml(error.message)}</td></tr>`;
     return;
   }
 
@@ -69,32 +66,34 @@ async function loadExercises() {
   `).join('');
 }
 
-exerciseForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const submitBtn = exerciseForm.querySelector('button[type="submit"]');
-  submitBtn.disabled = true;
-  submitBtn.textContent = 'Salvando...';
+if (exerciseForm) {
+  exerciseForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const submitBtn = exerciseForm.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Salvando...';
 
-  const payload = {
-    machine_number: document.getElementById('exercise-machine').value.trim(),
-    muscle_group: document.getElementById('exercise-muscle').value,
-    name: document.getElementById('exercise-name').value.trim(),
-    video_url: document.getElementById('exercise-video').value.trim() || null
-  };
+    const payload = {
+      machine_number: document.getElementById('exercise-machine').value.trim(),
+      muscle_group: document.getElementById('exercise-muscle').value,
+      name: document.getElementById('exercise-name').value.trim(),
+      video_url: document.getElementById('exercise-video').value.trim() || null
+    };
 
-  const { error } = await supabase.from('exercises').insert([payload]);
+    const { error } = await supabase.from('exercises').insert([payload]);
 
-  submitBtn.disabled = false;
-  submitBtn.textContent = 'Salvar Aparelho / Exercício';
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Salvar Aparelho / Exercício';
 
-  if (error) {
-    alert('Erro ao salvar exercício: ' + error.message);
-    return;
-  }
+    if (error) {
+      alert('Erro ao salvar exercício: ' + error.message);
+      return;
+    }
 
-  exerciseForm.reset();
-  await loadExercises();
-});
+    exerciseForm.reset();
+    await loadExercises();
+  });
+}
 
 window.deleteExercise = async (id) => {
   if (!confirm('Deseja realmente excluir este exercício do catálogo?')) return;
@@ -107,17 +106,18 @@ window.deleteExercise = async (id) => {
 };
 
 // ==========================================================================
-// ALUNOS E FREQUÊNCIA (ABA 02)
+// 3. ALUNOS E FREQUÊNCIA (ABA 02)
 // ==========================================================================
 async function loadStudents() {
   const { data: profiles, error } = await supabase
     .from('profiles')
-    .select('id, full_name, username, email, role')
+    .select('id, full_name, username, role')
     .eq('role', 'student')
     .order('full_name', { ascending: true });
 
   if (error) {
     console.error('Erro ao carregar alunos:', error.message);
+    studentsList.innerHTML = `<tr><td colspan="4" class="empty-state">Erro: ${escapeHtml(error.message)}</td></tr>`;
     return;
   }
 
@@ -158,7 +158,7 @@ async function loadStudents() {
     return `
       <tr>
         <td><strong>${escapeHtml(st.full_name)}</strong></td>
-        <td><span class="badge">${escapeHtml(st.username || st.email || '—')}</span></td>
+        <td><span class="badge">${escapeHtml(st.username || '—')}</span></td>
         <td><span class="badge">${lastDate}</span></td>
         <td>
           <button type="button" class="btn-sm btn-outline" onclick="openStudentWorkout('${st.id}')">Ver Ficha</button>
@@ -169,79 +169,88 @@ async function loadStudents() {
 }
 
 window.openStudentWorkout = async (studentId) => {
-  document.querySelector('.side-btn[data-tab="tab-fichas"]').click();
+  document.querySelector('.side-btn[data-tab="tab-fichas"]')?.click();
   planStudentSelect.value = studentId;
   await loadWorkoutPlan(studentId);
 };
 
-studentForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const submitBtn = studentForm.querySelector('button[type="submit"]');
-  submitBtn.disabled = true;
-  submitBtn.textContent = 'Cadastrando...';
+if (studentForm) {
+  studentForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const submitBtn = studentForm.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Cadastrando...';
 
-  const fullName = document.getElementById('student-name').value.trim();
-  const rawUsername = document.getElementById('student-username').value.trim().toLowerCase().replace(/\s+/g, '');
-  const rawCpf = document.getElementById('student-cpf').value;
+    const fullName = document.getElementById('student-name').value.trim();
+    const rawUsername = document.getElementById('student-username').value.trim().toLowerCase().replace(/\s+/g, '');
+    const rawCpf = document.getElementById('student-cpf').value;
 
-  const cpfDigits = normalizeCpfPassword(rawCpf);
-  if (cpfDigits.length !== 11) {
-    submitBtn.disabled = false;
-    submitBtn.textContent = 'Cadastrar Aluno';
-    alert('Digite um CPF válido com 11 dígitos.');
-    return;
-  }
-
-  const internalEmail = normalizeUsernameToEmail(rawUsername);
-
-  const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
-  const tempSupabase = createClient(supabase.supabaseUrl, supabase.supabaseKey, {
-    auth: { persistSession: false, autoRefreshToken: false }
-  });
-
-  const { data: signUpData, error: signUpError } = await tempSupabase.auth.signUp({
-    email: internalEmail,
-    password: cpfDigits,
-    options: {
-      data: { full_name: fullName, username: rawUsername, role: 'student' }
+    const cpfDigits = normalizeCpfPassword(rawCpf);
+    if (cpfDigits.length !== 11) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Cadastrar Aluno';
+      alert('Digite um CPF válido com 11 dígitos.');
+      return;
     }
-  });
 
-  if (signUpError) {
+    const internalEmail = normalizeUsernameToEmail(rawUsername);
+    const url = SUPABASE_URL || supabase.supabaseUrl;
+    const key = SUPABASE_ANON_KEY || supabase.supabaseKey;
+
+    const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+    const tempSupabase = createClient(url, key, {
+      auth: { persistSession: false, autoRefreshToken: false }
+    });
+
+    const { data: signUpData, error: signUpError } = await tempSupabase.auth.signUp({
+      email: internalEmail,
+      password: cpfDigits,
+      options: {
+        data: { full_name: fullName, username: rawUsername, role: 'student' }
+      }
+    });
+
+    if (signUpError) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Cadastrar Aluno';
+      alert('Erro ao criar aluno: ' + signUpError.message);
+      return;
+    }
+
+    if (signUpData?.user?.id) {
+      const { error: profileError } = await supabase.from('profiles').upsert([{
+        id: signUpData.user.id,
+        full_name: fullName,
+        username: rawUsername,
+        role: 'student'
+      }]);
+
+      if (profileError) {
+        console.warn('Aviso ao salvar perfil:', profileError.message);
+      }
+    }
+
     submitBtn.disabled = false;
     submitBtn.textContent = 'Cadastrar Aluno';
-    alert('Erro ao criar aluno: ' + signUpError.message);
-    return;
-  }
-
-  if (signUpData?.user?.id) {
-    await supabase.from('profiles').upsert([{
-      id: signUpData.user.id,
-      full_name: fullName,
-      username: rawUsername,
-      email: internalEmail,
-      role: 'student'
-    }]);
-  }
-
-  submitBtn.disabled = false;
-  submitBtn.textContent = 'Cadastrar Aluno';
-  studentForm.reset();
-  alert(`Aluno cadastrado!\nUsuário: ${rawUsername}\nSenha: ${cpfDigits}`);
-  await loadStudents();
-});
+    studentForm.reset();
+    alert(`Aluno cadastrado!\nUsuário: ${rawUsername}\nSenha: ${cpfDigits}`);
+    await loadStudents();
+  });
+}
 
 // ==========================================================================
-// MONTAGEM DE FICHAS DE TREINO (ABA 01)
+// 4. MONTAGEM DE FICHAS DE TREINO (ABA 01)
 // ==========================================================================
-planStudentSelect.addEventListener('change', async () => {
-  const studentId = planStudentSelect.value;
-  if (!studentId) {
-    workoutPlanList.innerHTML = '<tr><td colspan="5" class="empty-state">Selecione um aluno acima para carregar a ficha.</td></tr>';
-    return;
-  }
-  await loadWorkoutPlan(studentId);
-});
+if (planStudentSelect) {
+  planStudentSelect.addEventListener('change', async () => {
+    const studentId = planStudentSelect.value;
+    if (!studentId) {
+      workoutPlanList.innerHTML = '<tr><td colspan="5" class="empty-state">Selecione um aluno acima para carregar a ficha.</td></tr>';
+      return;
+    }
+    await loadWorkoutPlan(studentId);
+  });
+}
 
 async function loadWorkoutPlan(studentId) {
   workoutPlanList.innerHTML = '<tr><td colspan="5" class="empty-state">Carregando ficha...</td></tr>';
@@ -289,41 +298,43 @@ async function loadWorkoutPlan(studentId) {
   `).join('');
 }
 
-workoutForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const studentId = planStudentSelect.value;
-  if (!studentId) {
-    alert('Selecione um aluno primeiro.');
-    return;
-  }
+if (workoutForm) {
+  workoutForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const studentId = planStudentSelect.value;
+    if (!studentId) {
+      alert('Selecione um aluno primeiro.');
+      return;
+    }
 
-  const submitBtn = workoutForm.querySelector('button[type="submit"]');
-  submitBtn.disabled = true;
-  submitBtn.textContent = 'Adicionando...';
+    const submitBtn = workoutForm.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Adicionando...';
 
-  const payload = {
-    student_id: studentId,
-    exercise_id: planExerciseSelect.value,
-    division: document.getElementById('plan-division').value,
-    sets: parseInt(document.getElementById('plan-sets').value, 10),
-    reps: document.getElementById('plan-reps').value.trim(),
-    rest_seconds: parseInt(document.getElementById('plan-rest').value, 10) || 60,
-    notes: document.getElementById('plan-notes').value.trim() || null
-  };
+    const payload = {
+      student_id: studentId,
+      exercise_id: planExerciseSelect.value,
+      division: document.getElementById('plan-division').value,
+      sets: parseInt(document.getElementById('plan-sets').value, 10),
+      reps: document.getElementById('plan-reps').value.trim(),
+      rest_seconds: parseInt(document.getElementById('plan-rest').value, 10) || 60,
+      notes: document.getElementById('plan-notes').value.trim() || null
+    };
 
-  const { error } = await supabase.from('workout_plans').insert([payload]);
+    const { error } = await supabase.from('workout_plans').insert([payload]);
 
-  submitBtn.disabled = false;
-  submitBtn.textContent = 'Adicionar à Ficha';
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Adicionar à Ficha';
 
-  if (error) {
-    alert('Erro ao adicionar exercício na ficha: ' + error.message);
-    return;
-  }
+    if (error) {
+      alert('Erro ao adicionar exercício na ficha: ' + error.message);
+      return;
+    }
 
-  document.getElementById('plan-notes').value = '';
-  await loadWorkoutPlan(studentId);
-});
+    document.getElementById('plan-notes').value = '';
+    await loadWorkoutPlan(studentId);
+  });
+}
 
 window.deleteWorkoutItem = async (itemId) => {
   if (!confirm('Remover este exercício da ficha do aluno?')) return;
@@ -345,4 +356,11 @@ function escapeHtml(str) {
     .replace(/'/g, '&#039;');
 }
 
-initAdminDashboard();
+// ==========================================================================
+// 5. INICIALIZAÇÃO PROTEGIDA
+// ==========================================================================
+(async function init() {
+  const auth = await checkAuth('admin');
+  if (!auth) return;
+  await Promise.all([loadExercises(), loadStudents()]);
+})();

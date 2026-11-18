@@ -94,6 +94,13 @@ export async function checkAuth(requiredRole) {
 }
 
 export async function logout() {
-  await supabase.auth.signOut();
-  window.location.href = './index.html';
+  try {
+    await supabase.auth.signOut();
+  } catch (err) {
+    console.warn('Erro ao encerrar sessão remota:', err);
+  } finally {
+    localStorage.clear();
+    sessionStorage.clear();
+    window.location.href = './index.html';
+  }
 }

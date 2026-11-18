@@ -1,8 +1,8 @@
 // js/config.js
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const SUPABASE_URL = 'https://uyvfupifizdsrkcyevis.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_qNinVzPpnmasSwDAcj20xA_QsPQ6IMq';
+export const SUPABASE_URL = 'https://uyvfupifizdsrkcyevis.supabase.co';
+export const SUPABASE_ANON_KEY = 'sb_publishable_qNinVzPpnmasSwDAcj20xA_QsPQ6IMq';
 
 // Número do WhatsApp da academia (55 + DDD 31 + número)
 export const GYM_WHATSAPP = '5531999999999';
