@@ -26,7 +26,7 @@
   <div class="dashboard-shell">
     <!-- Barra Lateral Arredondada com 3 Opções -->
     <aside class="nav-card">
-      <span class="nav-section-title">MENU PRINCIPAL</span>
+      <span class="nav-section-title">MENU</span>
 
       <nav class="nav-buttons" aria-label="Navegação do Painel">
         <button type="button" class="side-btn active" data-tab="tab-fichas">
@@ -103,23 +103,13 @@
             </div>
 
             <!-- Painel Catálogo de Aparelhos -->
-            <div id="lib-catalog" class="lib-panel">
-              <input type="search" id="catalog-search" placeholder="Buscar aparelho ou nº...">
+<div id="lib-catalog" class="lib-panel">
+  <input type="search" id="catalog-search" placeholder="Digite o nome ou nº do aparelho...">
 
-              <div class="muscle-pills" id="muscle-filter-pills">
-                <button type="button" class="muscle-pill active" data-muscle="ALL">Todos</button>
-                <button type="button" class="muscle-pill" data-muscle="Peito">Peito</button>
-                <button type="button" class="muscle-pill" data-muscle="Costas">Costas</button>
-                <button type="button" class="muscle-pill" data-muscle="Pernas">Pernas</button>
-                <button type="button" class="muscle-pill" data-muscle="Ombros">Ombros</button>
-                <button type="button" class="muscle-pill" data-muscle="Bíceps">Bíceps</button>
-                <button type="button" class="muscle-pill" data-muscle="Tríceps">Tríceps</button>
-              </div>
-
-              <div id="catalog-items-list" class="library-scroll-list">
-                <div class="empty-state">Carregando aparelhos...</div>
-              </div>
-            </div>
+  <div id="catalog-items-list" class="library-scroll-list" style="margin-top: 12px;">
+    <div class="empty-state">Digite o nome ou nº do aparelho acima para buscar.</div>
+  </div>
+</div>
 
             <!-- Painel Modelos Prontos -->
             <div id="lib-templates" class="lib-panel" style="display: none;">

@@ -71,8 +71,6 @@
   border-radius: 20px;
   padding: 20px 16px;
   box-shadow: var(--shadow-md);
-  position: sticky;
-  top: 90px;
 }
 
 .nav-section-title {

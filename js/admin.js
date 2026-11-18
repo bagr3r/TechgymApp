@@ -7,7 +7,6 @@ let allTemplates = [];
 let currentStudentPlans = [];
 let activeSplitType = 'ABC';
 let activeDay = 'A';
-let activeMuscleFilter = 'ALL';
 let catalogSearchTerm = '';
 
 // Elementos
@@ -43,7 +42,7 @@ if (logoutBtn) {
 }
 
 // ==========================================================================
-// 1. CARREGAMENTO DE EXERCÍCIOS E CATÁLOGO FILTRÁVEL
+// 1. CARREGAMENTO DE EXERCÍCIOS E BUSCA SOB DEMANDA
 // ==========================================================================
 async function loadExercises() {
   const { data, error } = await supabase
@@ -64,21 +63,33 @@ async function loadExercises() {
 function renderCatalogList() {
   if (!catalogItemsList) return;
 
-  const filtered = allExercises.filter(ex => {
-    const matchMuscle = activeMuscleFilter === 'ALL' || ex.muscle_group === activeMuscleFilter;
-    const term = catalogSearchTerm.toLowerCase();
-    const matchText = !term ||
-      ex.name.toLowerCase().includes(term) ||
-      String(ex.machine_number).toLowerCase().includes(term);
-    return matchMuscle && matchText;
-  });
+  const term = catalogSearchTerm.trim();
 
-  if (!filtered.length) {
-    catalogItemsList.innerHTML = '<div class="empty-state">Nenhum aparelho encontrado neste filtro.</div>';
+  // Mantém a lista limpa enquanto o instrutor não digita
+  if (!term) {
+    catalogItemsList.innerHTML = '<div class="empty-state">Digite o nome ou nº do aparelho acima para buscar.</div>';
     return;
   }
 
-  catalogItemsList.innerHTML = filtered.map(ex => `
+  const lowerTerm = term.toLowerCase();
+  const filtered = allExercises.filter(ex =>
+    ex.name.toLowerCase().includes(lowerTerm) ||
+    String(ex.machine_number).toLowerCase().includes(lowerTerm)
+  );
+
+  // Se não encontrar no banco, oferece cadastro rápido com 1 clique
+  if (!filtered.length) {
+    catalogItemsList.innerHTML = `
+      <div class="empty-state" style="padding: 20px 12px;">
+        Nenhum aparelho encontrado para <strong>"${escapeHtml(term)}"</strong>.<br><br>
+        <button type="button" class="btn-primary btn-sm" style="width:100%;" onclick="quickCreateAndAddExercise()">
+          + Cadastrar "${escapeHtml(term)}" e adicionar
+        </button>
+      </div>`;
+    return;
+  }
+
+  catalogItemsList.innerHTML = filtered.slice(0, 12).map(ex => `
     <div class="lib-item-card">
       <div class="lib-item-info">
         <strong>#${escapeHtml(ex.machine_number)} — ${escapeHtml(ex.name)}</strong>
@@ -91,22 +102,50 @@ function renderCatalogList() {
   `).join('');
 }
 
-// Filtros de Grupo Muscular e Busca
-document.querySelectorAll('.muscle-pill').forEach(pill => {
-  pill.addEventListener('click', () => {
-    document.querySelectorAll('.muscle-pill').forEach(p => p.classList.remove('active'));
-    pill.classList.add('active');
-    activeMuscleFilter = pill.dataset.muscle || 'ALL';
-    renderCatalogList();
-  });
-});
-
 if (catalogSearchInput) {
   catalogSearchInput.addEventListener('input', (e) => {
     catalogSearchTerm = e.target.value;
     renderCatalogList();
   });
 }
+
+window.quickCreateAndAddExercise = async () => {
+  const studentId = planStudentSelect?.value;
+  if (!studentId) {
+    alert('Selecione um aluno no topo antes de cadastrar e adicionar.');
+    return;
+  }
+
+  const name = catalogSearchTerm.trim();
+  if (!name) return;
+
+  const machine = prompt(`Nº do aparelho para "${name}" (ex: 14 ou LIVRE):`, 'LIVRE');
+  if (machine === null) return;
+
+  const muscle = prompt('Grupo muscular (Peito, Costas, Pernas, Ombros, Bíceps, Tríceps, Geral):', 'Geral');
+  if (muscle === null) return;
+
+  const { data: created, error } = await supabase
+    .from('exercises')
+    .insert([{
+      name,
+      machine_number: machine.trim() || 'LIVRE',
+      muscle_group: muscle.trim() || 'Geral',
+      video_url: null
+    }])
+    .select()
+    .single();
+
+  if (error || !created) {
+    alert('Erro ao cadastrar aparelho: ' + (error?.message || ''));
+    return;
+  }
+
+  catalogSearchTerm = '';
+  if (catalogSearchInput) catalogSearchInput.value = '';
+  await loadExercises();
+  await window.quickAddExercise(created.id);
+};
 
 // ==========================================================================
 // 2. MODELOS PRONTOS (TEMPLATES)
@@ -342,7 +381,7 @@ function renderDayEditor() {
     dayExercisesEditor.innerHTML = `
       <div class="empty-state">
         Nenhum exercício no <strong>Treino ${activeDay}</strong> ainda.<br>
-        Clique em <strong>+ Add</strong> nos aparelhos ao lado ou importe um <strong>Modelo Pronto</strong>.
+        Busque um aparelho ao lado ou importe um <strong>Modelo Pronto</strong>.
       </div>`;
     return;
   }
