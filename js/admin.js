@@ -8,16 +8,56 @@ const studentForm = document.getElementById('student-form');
 const exerciseForm = document.getElementById('exercise-form');
 
 const planStudentSelect = document.getElementById('plan-student');
+const planProgramSelect = document.getElementById('plan-program');
+const planDivisionSelect = document.getElementById('plan-division');
 const planExerciseSelect = document.getElementById('plan-exercise');
+
 const workoutPlanList = document.getElementById('workout-plan-list');
 const studentsList = document.getElementById('students-list');
 const exercisesList = document.getElementById('exercises-list');
 
-// 1. Registra o botão Sair imediatamente
+// ==========================================================================
+// 1. LOGOUT & CONTROLE DE DIVISÃO DE TREINO (Full body, AB, ABC, ABCD, ABCDE)
+// ==========================================================================
 if (logoutBtn) {
   logoutBtn.addEventListener('click', async (e) => {
     e.preventDefault();
     await logout();
+  });
+}
+
+if (planProgramSelect && planDivisionSelect) {
+  const programMap = {
+    'Full body': [{ val: 'A', label: 'A (Treino Único)' }],
+    'AB': [
+      { val: 'A', label: 'A (Treino A)' },
+      { val: 'B', label: 'B (Treino B)' }
+    ],
+    'ABC': [
+      { val: 'A', label: 'A (Treino A)' },
+      { val: 'B', label: 'B (Treino B)' },
+      { val: 'C', label: 'C (Treino C)' }
+    ],
+    'ABCD': [
+      { val: 'A', label: 'A (Treino A)' },
+      { val: 'B', label: 'B (Treino B)' },
+      { val: 'C', label: 'C (Treino C)' },
+      { val: 'D', label: 'D (Treino D)' }
+    ],
+    'ABCDE': [
+      { val: 'A', label: 'A (Treino A)' },
+      { val: 'B', label: 'B (Treino B)' },
+      { val: 'C', label: 'C (Treino C)' },
+      { val: 'D', label: 'D (Treino D)' },
+      { val: 'E', label: 'E (Treino E)' }
+    ]
+  };
+
+  planProgramSelect.addEventListener('change', () => {
+    const options = programMap[planProgramSelect.value] || programMap['ABC'];
+    planDivisionSelect.innerHTML = options
+      .map(o => `<option value="${o.val}">${o.label}</option>`)
+      .join('');
   });
 }
 
@@ -32,17 +72,23 @@ async function loadExercises() {
 
   if (error) {
     console.error('Erro ao carregar exercícios:', error.message);
-    exercisesList.innerHTML = `<tr><td colspan="5" class="empty-state">Erro: ${escapeHtml(error.message)}</td></tr>`;
+    if (exercisesList) {
+      exercisesList.innerHTML = `<tr><td colspan="5" class="empty-state">Erro: ${escapeHtml(error.message)}</td></tr>`;
+    }
     return;
   }
 
-  planExerciseSelect.innerHTML = '<option value="">Selecione o exercício...</option>';
-  data.forEach(ex => {
-    const option = document.createElement('option');
-    option.value = ex.id;
-    option.textContent = `[Máq. ${ex.machine_number}] ${ex.name} (${ex.muscle_group})`;
-    planExerciseSelect.appendChild(option);
-  });
+  if (planExerciseSelect) {
+    planExerciseSelect.innerHTML = '<option value="">Selecione o exercício...</option>';
+    data.forEach(ex => {
+      const option = document.createElement('option');
+      option.value = ex.id;
+      option.textContent = `[Máq. ${ex.machine_number}] ${ex.name} (${ex.muscle_group})`;
+      planExerciseSelect.appendChild(option);
+    });
+  }
+
+  if (!exercisesList) return;
 
   if (!data.length) {
     exercisesList.innerHTML = '<tr><td colspan="5" class="empty-state">Nenhum aparelho ou exercício cadastrado ainda.</td></tr>';
@@ -70,8 +116,10 @@ if (exerciseForm) {
   exerciseForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const submitBtn = exerciseForm.querySelector('button[type="submit"]');
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Salvando...';
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Salvando...';
+    }
 
     const payload = {
       machine_number: document.getElementById('exercise-machine').value.trim(),
@@ -82,8 +130,10 @@ if (exerciseForm) {
 
     const { error } = await supabase.from('exercises').insert([payload]);
 
-    submitBtn.disabled = false;
-    submitBtn.textContent = 'Salvar Aparelho / Exercício';
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Salvar Aparelho / Exercício';
+    }
 
     if (error) {
       alert('Erro ao salvar exercício: ' + error.message);
@@ -117,7 +167,9 @@ async function loadStudents() {
 
   if (error) {
     console.error('Erro ao carregar alunos:', error.message);
-    studentsList.innerHTML = `<tr><td colspan="4" class="empty-state">Erro: ${escapeHtml(error.message)}</td></tr>`;
+    if (studentsList) {
+      studentsList.innerHTML = `<tr><td colspan="4" class="empty-state">Erro: ${escapeHtml(error.message)}</td></tr>`;
+    }
     return;
   }
 
@@ -135,15 +187,19 @@ async function loadStudents() {
     });
   }
 
-  const currentSelected = planStudentSelect.value;
-  planStudentSelect.innerHTML = '<option value="">Selecione o aluno...</option>';
-  profiles.forEach(st => {
-    const option = document.createElement('option');
-    option.value = st.id;
-    option.textContent = st.full_name;
-    planStudentSelect.appendChild(option);
-  });
-  if (currentSelected) planStudentSelect.value = currentSelected;
+  if (planStudentSelect) {
+    const currentSelected = planStudentSelect.value;
+    planStudentSelect.innerHTML = '<option value="">Selecione o aluno...</option>';
+    profiles.forEach(st => {
+      const option = document.createElement('option');
+      option.value = st.id;
+      option.textContent = st.full_name;
+      planStudentSelect.appendChild(option);
+    });
+    if (currentSelected) planStudentSelect.value = currentSelected;
+  }
+
+  if (!studentsList) return;
 
   if (!profiles.length) {
     studentsList.innerHTML = '<tr><td colspan="4" class="empty-state">Nenhum aluno cadastrado ainda.</td></tr>';
@@ -169,8 +225,11 @@ async function loadStudents() {
 }
 
 window.openStudentWorkout = async (studentId) => {
-  document.querySelector('.side-btn[data-tab="tab-fichas"]')?.click();
-  planStudentSelect.value = studentId;
+  const tabBtn = document.querySelector('.side-btn[data-tab="tab-fichas"]');
+  tabBtn?.click();
+  if (planStudentSelect) {
+    planStudentSelect.value = studentId;
+  }
   await loadWorkoutPlan(studentId);
 };
 
@@ -178,8 +237,10 @@ if (studentForm) {
   studentForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const submitBtn = studentForm.querySelector('button[type="submit"]');
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Cadastrando...';
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Cadastrando...';
+    }
 
     const fullName = document.getElementById('student-name').value.trim();
     const rawUsername = document.getElementById('student-username').value.trim().toLowerCase().replace(/\s+/g, '');
@@ -187,18 +248,18 @@ if (studentForm) {
 
     const cpfDigits = normalizeCpfPassword(rawCpf);
     if (cpfDigits.length !== 11) {
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Cadastrar Aluno';
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Cadastrar Aluno';
+      }
       alert('Digite um CPF válido com 11 dígitos.');
       return;
     }
 
     const internalEmail = normalizeUsernameToEmail(rawUsername);
-    const url = SUPABASE_URL || supabase.supabaseUrl;
-    const key = SUPABASE_ANON_KEY || supabase.supabaseKey;
 
     const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
-    const tempSupabase = createClient(url, key, {
+    const tempSupabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       auth: { persistSession: false, autoRefreshToken: false }
     });
 
@@ -211,27 +272,27 @@ if (studentForm) {
     });
 
     if (signUpError) {
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Cadastrar Aluno';
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Cadastrar Aluno';
+      }
       alert('Erro ao criar aluno: ' + signUpError.message);
       return;
     }
 
     if (signUpData?.user?.id) {
-      const { error: profileError } = await supabase.from('profiles').upsert([{
+      await supabase.from('profiles').upsert([{
         id: signUpData.user.id,
         full_name: fullName,
         username: rawUsername,
         role: 'student'
       }]);
-
-      if (profileError) {
-        console.warn('Aviso ao salvar perfil:', profileError.message);
-      }
     }
 
-    submitBtn.disabled = false;
-    submitBtn.textContent = 'Cadastrar Aluno';
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Cadastrar Aluno';
+    }
     studentForm.reset();
     alert(`Aluno cadastrado!\nUsuário: ${rawUsername}\nSenha: ${cpfDigits}`);
     await loadStudents();
@@ -245,7 +306,9 @@ if (planStudentSelect) {
   planStudentSelect.addEventListener('change', async () => {
     const studentId = planStudentSelect.value;
     if (!studentId) {
-      workoutPlanList.innerHTML = '<tr><td colspan="5" class="empty-state">Selecione um aluno acima para carregar a ficha.</td></tr>';
+      if (workoutPlanList) {
+        workoutPlanList.innerHTML = '<tr><td colspan="5" class="empty-state">Selecione um aluno acima para carregar a ficha.</td></tr>';
+      }
       return;
     }
     await loadWorkoutPlan(studentId);
@@ -253,6 +316,7 @@ if (planStudentSelect) {
 }
 
 async function loadWorkoutPlan(studentId) {
+  if (!workoutPlanList) return;
   workoutPlanList.innerHTML = '<tr><td colspan="5" class="empty-state">Carregando ficha...</td></tr>';
 
   const { data, error } = await supabase
@@ -282,39 +346,44 @@ async function loadWorkoutPlan(studentId) {
     return;
   }
 
-  workoutPlanList.innerHTML = data.map(item => `
-    <tr>
-      <td><span class="badge badge-red">Treino ${escapeHtml(item.division)}</span></td>
-      <td><span class="badge badge-dark">#${escapeHtml(item.exercises?.machine_number || '—')}</span></td>
-      <td>
-        <strong>${escapeHtml(item.exercises?.name || 'Exercício')}</strong>
-        ${item.notes ? `<div style="font-size:0.78rem; color:var(--text-muted);">${escapeHtml(item.notes)}</div>` : ''}
-      </td>
-      <td><strong>${item.sets}x ${escapeHtml(item.reps)}</strong> (${item.rest_seconds || 60}s)</td>
-      <td>
-        <button type="button" class="btn-sm btn-danger" onclick="deleteWorkoutItem('${item.id}')">Remover</button>
-      </td>
-    </tr>
-  `).join('');
+  workoutPlanList.innerHTML = data.map(item => {
+    const ex = Array.isArray(item.exercises) ? item.exercises[0] : item.exercises;
+    return `
+      <tr>
+        <td><span class="badge badge-red">Treino ${escapeHtml(item.division)}</span></td>
+        <td><span class="badge badge-dark">#${escapeHtml(ex?.machine_number || '—')}</span></td>
+        <td>
+          <strong>${escapeHtml(ex?.name || 'Exercício')}</strong>
+          ${item.notes ? `<div style="font-size:0.78rem; color:var(--text-muted);">${escapeHtml(item.notes)}</div>` : ''}
+        </td>
+        <td><strong>${item.sets}x ${escapeHtml(item.reps)}</strong> (${item.rest_seconds || 60}s)</td>
+        <td>
+          <button type="button" class="btn-sm btn-danger" onclick="deleteWorkoutItem('${item.id}')">Remover</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
 }
 
 if (workoutForm) {
   workoutForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const studentId = planStudentSelect.value;
+    const studentId = planStudentSelect?.value;
     if (!studentId) {
       alert('Selecione um aluno primeiro.');
       return;
     }
 
     const submitBtn = workoutForm.querySelector('button[type="submit"]');
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Adicionando...';
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Adicionando...';
+    }
 
     const payload = {
       student_id: studentId,
-      exercise_id: planExerciseSelect.value,
-      division: document.getElementById('plan-division').value,
+      exercise_id: planExerciseSelect?.value,
+      division: planDivisionSelect?.value || 'A',
       sets: parseInt(document.getElementById('plan-sets').value, 10),
       reps: document.getElementById('plan-reps').value.trim(),
       rest_seconds: parseInt(document.getElementById('plan-rest').value, 10) || 60,
@@ -323,8 +392,10 @@ if (workoutForm) {
 
     const { error } = await supabase.from('workout_plans').insert([payload]);
 
-    submitBtn.disabled = false;
-    submitBtn.textContent = 'Adicionar à Ficha';
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Adicionar à Ficha';
+    }
 
     if (error) {
       alert('Erro ao adicionar exercício na ficha: ' + error.message);
@@ -343,7 +414,9 @@ window.deleteWorkoutItem = async (itemId) => {
     alert('Erro ao remover: ' + error.message);
     return;
   }
-  await loadWorkoutPlan(planStudentSelect.value);
+  if (planStudentSelect?.value) {
+    await loadWorkoutPlan(planStudentSelect.value);
+  }
 };
 
 function escapeHtml(str) {

@@ -1,4 +1,3 @@
-// @ts-check
 import { supabase, GYM_WHATSAPP, DEFAULT_WHATSAPP_MSG } from './config.js';
 import { checkAuth, logout } from './auth.js';
 
