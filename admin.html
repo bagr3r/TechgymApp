@@ -8,6 +8,9 @@
   <link rel="stylesheet" href="./css/admin.css">
 </head>
 <body>
+  <!-- Container de Notificações Toast Personalizadas -->
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
   <header class="topbar">
     <div class="topbar-inner">
       <div class="brand-box">
@@ -24,6 +27,7 @@
   </header>
 
   <div class="dashboard-shell">
+    <!-- Menu Flutuante -->
     <aside class="nav-card">
       <span class="nav-section-title">MENU</span>
 
@@ -105,11 +109,11 @@
             </div>
 
             <div id="lib-templates" class="lib-panel" style="display: none;">
-              <div id="templates-list" class="library-scroll-list">
-                <div class="empty-state">Carregando modelos...</div>
-              </div>
-            </div>
-          </div>
+              <input type="search" id="templates-search" placeholder="Buscar modelo por nome ou divisão...">
+            <div id="templates-list" class="library-scroll-list" style="margin-top: 12px;">
+          <div class="empty-state">Carregando modelos...</div>
+      </div>
+</div>
 
           <div class="days-workspace">
             <div class="day-tabs-bar" id="day-tabs-container"></div>
@@ -121,7 +125,7 @@
       </section>
 
       <!-- ================================================================
-           ABA 02: ALUNOS (COM VALIDAÇÃO DE CPF REAL, BUSCA, EDIÇÃO E EXCLUSÃO)
+           ABA 02: ALUNOS (VALIDAÇÃO INLINE, PESQUISA, EDIÇÃO E EXCLUSÃO)
            ================================================================ -->
       <section id="tab-alunos" class="tab-panel">
         <div class="content-header">
@@ -131,19 +135,22 @@
           </div>
         </div>
 
-        <form id="student-form" class="inline-builder">
+        <form id="student-form" class="inline-builder" novalidate>
           <div class="builder-grid-3">
             <div class="form-group">
               <label for="student-name">Nome Completo *</label>
-              <input type="text" id="student-name" placeholder="Ex: João da Silva" minlength="3" required>
+              <input type="text" id="student-name" placeholder="Ex: João da Silva">
+              <small class="field-error-msg" id="err-student-name"></small>
             </div>
             <div class="form-group">
               <label for="student-username">Usuário de Acesso *</label>
-              <input type="text" id="student-username" placeholder="Ex: joao.silva" autocapitalize="none" required>
+              <input type="text" id="student-username" placeholder="Ex: joao.silva" autocapitalize="none">
+              <small class="field-error-msg" id="err-student-username"></small>
             </div>
             <div class="form-group">
               <label for="student-cpf">CPF (Será a senha) *</label>
-              <input type="text" id="student-cpf" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" required>
+              <input type="text" id="student-cpf" inputmode="numeric" maxlength="14" placeholder="000.000.000-00">
+              <small class="field-error-msg" id="err-student-cpf"></small>
             </div>
           </div>
           <div class="builder-footer">
@@ -176,41 +183,44 @@
       </section>
 
       <!-- ================================================================
-           ABA 03: APARELHOS & EXERCÍCIOS (COM Nº DA MÁQUINA, PESQUISA E EDIÇÃO)
+           ABA 03: APARELHOS (AGRUPAMENTO MUSCULAR, PESQUISA E VALIDAÇÃO INLINE)
            ================================================================ -->
       <section id="tab-aparelhos" class="tab-panel">
         <div class="content-header">
           <div>
             <h2>Aparelhos &amp; <span class="text-red">Exercícios</span></h2>
-            <p>Identifique o número da máquina da academia para facilitar a localização pelo aluno.</p>
+            <p>Cadastre e organize os equipamentos da academia por grupo muscular.</p>
           </div>
         </div>
 
-        <form id="exercise-form" class="inline-builder">
+        <form id="exercise-form" class="inline-builder" novalidate>
           <div class="builder-grid-4">
             <div class="form-group">
               <label for="exercise-machine">Nº / Código da Máquina *</label>
-              <input type="text" id="exercise-machine" placeholder="Ex: 01, 14B ou LIVRE" maxlength="12" required>
+              <input type="text" id="exercise-machine" placeholder="Ex: 01, 14B ou LIVRE" maxlength="12">
+              <small class="field-error-msg" id="err-exercise-machine"></small>
             </div>
             <div class="form-group">
               <label for="exercise-name">Nome do Exercício *</label>
-              <input type="text" id="exercise-name" placeholder="Ex: Supino Reto Máquina" minlength="3" required>
+              <input type="text" id="exercise-name" placeholder="Ex: Supino Reto Máquina">
+              <small class="field-error-msg" id="err-exercise-name"></small>
             </div>
             <div class="form-group">
               <label for="exercise-muscle">Grupo Muscular *</label>
-              <select id="exercise-muscle" required>
+              <select id="exercise-muscle">
                 <option value="Peito">Peito</option>
                 <option value="Costas">Costas</option>
-                <option value="Pernas">Pernas</option>
                 <option value="Ombros">Ombros</option>
-                <option value="Bíceps">Bíceps</option>
-                <option value="Tríceps">Tríceps</option>
-                <option value="Abdômen / Cardio">Abdômen / Cardio</option>
+                <option value="Braços">Braços (Bíceps / Tríceps)</option>
+                <option value="Membros Inferiores">Membros Inferiores</option>
+                <option value="Abdômen">Abdômen</option>
               </select>
+              <small class="field-error-msg" id="err-exercise-muscle"></small>
             </div>
             <div class="form-group">
               <label for="exercise-video">Link do YouTube (Opcional)</label>
               <input type="url" id="exercise-video" placeholder="https://www.youtube.com/watch?v=...">
+              <small class="field-error-msg" id="err-exercise-video"></small>
             </div>
           </div>
           <div class="builder-footer">
@@ -221,25 +231,12 @@
         <div class="divider"></div>
 
         <div class="table-toolbar">
-          <h3>Catálogo da Academia</h3>
+          <h3>Catálogo Agrupado por Grupo Muscular</h3>
           <input type="search" id="exercises-table-search" placeholder="Pesquisar por nº da máquina, exercício ou grupo...">
         </div>
 
-        <div class="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>Nº Máquina</th>
-                <th>Exercício</th>
-                <th>Grupo</th>
-                <th>Vídeo</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody id="exercises-list">
-              <tr><td colspan="5" class="empty-state">Carregando catálogo...</td></tr>
-            </tbody>
-          </table>
+        <div id="exercises-grouped-container" class="muscle-groups-stack">
+          <div class="empty-state">Carregando catálogo de aparelhos...</div>
         </div>
       </section>
     </main>
@@ -254,15 +251,17 @@
         <h3>Editar Dados do Aluno</h3>
         <button type="button" class="btn-sm btn-outline" onclick="closeStudentModal()">✕</button>
       </div>
-      <form id="edit-student-form" class="admin-modal-form">
+      <form id="edit-student-form" class="admin-modal-form" novalidate>
         <input type="hidden" id="edit-student-id">
         <div class="form-group">
           <label for="edit-student-name">Nome Completo *</label>
-          <input type="text" id="edit-student-name" minlength="3" required>
+          <input type="text" id="edit-student-name">
+          <small class="field-error-msg" id="err-edit-student-name"></small>
         </div>
         <div class="form-group">
           <label for="edit-student-username">Usuário de Acesso *</label>
-          <input type="text" id="edit-student-username" autocapitalize="none" required>
+          <input type="text" id="edit-student-username" autocapitalize="none">
+          <small class="field-error-msg" id="err-edit-student-username"></small>
         </div>
         <div class="admin-modal-actions">
           <button type="button" class="btn-outline" onclick="closeStudentModal()">Cancelar</button>
@@ -281,37 +280,55 @@
         <h3>Editar Aparelho / Exercício</h3>
         <button type="button" class="btn-sm btn-outline" onclick="closeExerciseModal()">✕</button>
       </div>
-      <form id="edit-exercise-form" class="admin-modal-form">
+      <form id="edit-exercise-form" class="admin-modal-form" novalidate>
         <input type="hidden" id="edit-exercise-id">
         <div class="form-group">
           <label for="edit-exercise-machine">Nº / Código da Máquina *</label>
-          <input type="text" id="edit-exercise-machine" maxlength="12" required>
+          <input type="text" id="edit-exercise-machine" maxlength="12">
+          <small class="field-error-msg" id="err-edit-exercise-machine"></small>
         </div>
         <div class="form-group">
           <label for="edit-exercise-name">Nome do Exercício *</label>
-          <input type="text" id="edit-exercise-name" minlength="3" required>
+          <input type="text" id="edit-exercise-name">
+          <small class="field-error-msg" id="err-edit-exercise-name"></small>
         </div>
         <div class="form-group">
           <label for="edit-exercise-muscle">Grupo Muscular *</label>
-          <select id="edit-exercise-muscle" required>
+          <select id="edit-exercise-muscle">
             <option value="Peito">Peito</option>
             <option value="Costas">Costas</option>
-            <option value="Pernas">Pernas</option>
             <option value="Ombros">Ombros</option>
-            <option value="Bíceps">Bíceps</option>
-            <option value="Tríceps">Tríceps</option>
-            <option value="Abdômen / Cardio">Abdômen / Cardio</option>
+            <option value="Braços">Braços (Bíceps / Tríceps)</option>
+            <option value="Membros Inferiores">Membros Inferiores</option>
+            <option value="Abdômen">Abdômen</option>
           </select>
         </div>
         <div class="form-group">
           <label for="edit-exercise-video">Link do YouTube</label>
           <input type="url" id="edit-exercise-video" placeholder="https://www.youtube.com/watch?v=...">
+          <small class="field-error-msg" id="err-edit-exercise-video"></small>
         </div>
         <div class="admin-modal-actions">
           <button type="button" class="btn-outline" onclick="closeExerciseModal()">Cancelar</button>
           <button type="submit" class="btn-primary">Salvar Alterações</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       MODAL DE CONFIRMAÇÃO PERSONALIZADO TECHGYM (SUBSTITUI CONFIRM())
+       ====================================================================== -->
+  <div id="confirm-modal" class="admin-modal-backdrop" style="display: none;" role="dialog" aria-modal="true">
+    <div class="admin-modal-card">
+      <div class="admin-modal-header">
+        <h3 id="confirm-modal-title">Confirmar Ação</h3>
+      </div>
+      <p id="confirm-modal-text" style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5;"></p>
+      <div class="admin-modal-actions">
+        <button type="button" id="confirm-modal-cancel" class="btn-outline">Cancelar</button>
+        <button type="button" id="confirm-modal-ok" class="btn-primary">Confirmar</button>
+      </div>
     </div>
   </div>
 

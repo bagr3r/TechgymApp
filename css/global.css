@@ -205,3 +205,78 @@ input:focus, select:focus {
   background-color: var(--black-matte);
   color: #FFFFFF;
 }
+
+/* ==========================================================================
+   VALIDAÇÃO INLINE DE CAMPOS (BORDA VERMELHA + TEXTO DESCRITIVO)
+   ========================================================================== */
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.input-error {
+  border-color: var(--red-techgym) !important;
+  background-color: rgba(214, 36, 42, 0.04) !important;
+  box-shadow: 0 0 0 3px rgba(214, 36, 42, 0.12) !important;
+}
+
+.field-error-msg {
+  display: block;
+  min-height: 16px;
+  margin-top: 4px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--red-techgym);
+}
+
+/* ==========================================================================
+   NOTIFICAÇÕES TOAST PERSONALIZADAS (SUBSTITUI ALERT() DO NAVEGADOR)
+   ========================================================================== */
+.toast-container {
+  position: fixed;
+  top: 76px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 360px;
+  pointer-events: none;
+}
+
+.techgym-toast {
+  pointer-events: auto;
+  background-color: var(--black-matte);
+  color: #FFFFFF;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border-left: 4px solid var(--red-techgym);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  animation: toastIn 0.22s ease;
+}
+
+.techgym-toast.success {
+  border-left-color: #198754;
+}
+
+.techgym-toast-body strong {
+  display: block;
+  font-size: 0.86rem;
+  font-weight: 800;
+  margin-bottom: 2px;
+}
+
+.techgym-toast-body p {
+  font-size: 0.8rem;
+  color: #D0D4DC;
+  line-height: 1.35;
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
