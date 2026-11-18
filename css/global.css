@@ -1,25 +1,27 @@
 /* ==========================================================================
-   TECHGYM DESIGN SYSTEM — PADRÃO GLOBAL DE TIPOGRAFIA, INPUTS E BOTÕES
+   TECHGYM DESIGN SYSTEM — MATTE DARK / OFF-WHITE / CRIMSON RED
    ========================================================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
 :root {
   --bg-canvas: #ECEEF2;
-  --surface-matte: #FAFAFB;
-  --surface-subtle: #F3F4F7;
-  --black-matte: #1C1E22;
-  --black-soft: #2A2D34;
+  --surface-card: #FFFFFF;
+  --surface-matte: #F7F8FA;
+  --black-matte: #16171A;
+  --black-elevated: #22252A;
   --red-techgym: #D6242A;
   --red-techgym-hover: #B81D22;
-  --red-soft: rgba(214, 36, 42, 0.10);
-  --border-matte: #DCDFE6;
-  --text-main: #1C1E22;
-  --text-muted: #646973;
+  --red-tint: rgba(214, 36, 42, 0.10);
+  --green-ok: #198754;
+  --border-light: #E2E5EC;
+  --border-strong: #CBD0DC;
+  --text-primary: #181A1F;
+  --text-secondary: #646A75;
 
-  --radius-card: 16px;
-  --radius-control: 10px;
-  --radius-pill: 999px;
+  --shadow-sm: 0 2px 8px rgba(22, 23, 26, 0.04);
+  --shadow-md: 0 8px 24px rgba(22, 23, 26, 0.06);
+  --shadow-lg: 0 14px 32px rgba(22, 23, 26, 0.12);
 }
 
 *, *::before, *::after {
@@ -34,7 +36,7 @@ html, body {
   overflow-x: hidden;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background-color: var(--bg-canvas);
-  color: var(--text-main);
+  color: var(--text-primary);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
@@ -43,7 +45,7 @@ h1, h2, h3, h4 {
   font-family: inherit;
   font-weight: 800;
   letter-spacing: -0.02em;
-  color: var(--text-main);
+  color: var(--text-primary);
 }
 
 .text-red {
@@ -51,7 +53,7 @@ h1, h2, h3, h4 {
 }
 
 /* ==========================================================================
-   PADRONIZAÇÃO DE BOTÕES EM TODO O SISTEMA
+   BOTÕES PADRONIZADOS
    ========================================================================== */
 button, .btn {
   appearance: none;
@@ -60,74 +62,70 @@ button, .btn {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 42px;
-  padding: 10px 20px;
+  min-height: 40px;
+  padding: 9px 18px;
   font-family: inherit;
-  font-size: 0.88rem;
+  font-size: 0.86rem;
   font-weight: 700;
   line-height: 1;
-  border-radius: var(--radius-control);
+  border-radius: 10px;
   border: 1.5px solid transparent;
   cursor: pointer;
   text-decoration: none;
-  transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.12s ease, box-shadow 0.18s ease;
+  transition: all 0.18s ease;
 }
 
-button:active, .btn:active {
+button:active:not(:disabled) {
   transform: scale(0.98);
 }
 
-button:disabled, .btn:disabled {
-  opacity: 0.6;
+button:disabled {
+  opacity: 0.55;
   cursor: not-allowed;
 }
 
-/* Botão Primário (Vermelho Techgym Fosco) */
 .btn-primary {
   background-color: var(--red-techgym);
   color: #FFFFFF;
-  box-shadow: 0 2px 8px rgba(214, 36, 42, 0.22);
+  box-shadow: 0 3px 10px rgba(214, 36, 42, 0.22);
 }
 
 .btn-primary:hover:not(:disabled) {
   background-color: var(--red-techgym-hover);
-  box-shadow: 0 4px 12px rgba(214, 36, 42, 0.30);
+  box-shadow: 0 5px 14px rgba(214, 36, 42, 0.30);
 }
 
-/* Botão Secundário / Neutro */
-.btn-outline {
-  background-color: #FFFFFF;
-  color: var(--text-main);
-  border-color: var(--border-matte);
-}
-
-.btn-outline:hover:not(:disabled) {
-  border-color: var(--black-matte);
-  background-color: #F8F9FB;
-}
-
-/* Botão Escuro (Preto Fosco) */
 .btn-dark {
   background-color: var(--black-matte);
   color: #FFFFFF;
 }
 
 .btn-dark:hover:not(:disabled) {
-  background-color: var(--black-soft);
+  background-color: var(--black-elevated);
 }
 
-/* Botão Pequeno (Para ações dentro de tabelas) */
+.btn-outline {
+  background-color: #FFFFFF;
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+.btn-outline:hover:not(:disabled) {
+  border-color: var(--black-matte);
+  background-color: var(--surface-matte);
+}
+
 .btn-sm {
-  min-height: 34px;
+  min-height: 32px;
   padding: 6px 12px;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   border-radius: 8px;
 }
 
 .btn-danger {
   background-color: #FFFFFF;
   color: var(--red-techgym);
-  border-color: rgba(214, 36, 42, 0.35);
+  border-color: rgba(214, 36, 42, 0.32);
 }
 
 .btn-danger:hover:not(:disabled) {
@@ -137,14 +135,16 @@ button:disabled, .btn:disabled {
 }
 
 /* ==========================================================================
-   PADRONIZAÇÃO DE INPUTS, SELECTS E LABELS
+   INPUTS E SELECTS
    ========================================================================== */
 label {
   display: block;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 700;
-  color: var(--text-main);
-  margin-bottom: 6px;
+  color: var(--text-primary);
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 input[type="text"],
@@ -152,52 +152,52 @@ input[type="email"],
 input[type="password"],
 input[type="number"],
 input[type="url"],
-select,
-textarea {
+input[type="search"],
+select {
   appearance: none;
   -webkit-appearance: none;
   width: 100%;
-  height: 44px;
-  padding: 0 14px;
+  height: 42px;
+  padding: 0 13px;
   font-family: inherit;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-weight: 500;
-  color: var(--text-main);
+  color: var(--text-primary);
   background-color: #FFFFFF;
-  border: 1.5px solid var(--border-matte);
-  border-radius: var(--radius-control);
+  border: 1.5px solid var(--border-light);
+  border-radius: 10px;
   outline: none;
   transition: border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
 select {
-  padding-right: 36px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%231C1E22' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  padding-right: 34px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='%23181A1F' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 12px center;
-  background-size: 15px;
+  background-position: right 11px center;
+  background-size: 14px;
 }
 
-input:focus, select:focus, textarea:focus {
+input:focus, select:focus {
   border-color: var(--red-techgym);
-  box-shadow: 0 0 0 3px var(--red-soft);
+  box-shadow: 0 0 0 3px var(--red-tint);
 }
 
-/* Badges padronizados */
+/* Badges */
 .badge {
   display: inline-flex;
   align-items: center;
   padding: 4px 10px;
-  font-size: 0.76rem;
+  font-size: 0.74rem;
   font-weight: 700;
-  border-radius: var(--radius-pill);
+  border-radius: 999px;
   background-color: #ECEEF2;
-  color: var(--text-main);
+  color: var(--text-primary);
   white-space: nowrap;
 }
 
 .badge-red {
-  background-color: var(--red-soft);
+  background-color: var(--red-tint);
   color: var(--red-techgym);
 }
 

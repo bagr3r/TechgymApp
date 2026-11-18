@@ -18,12 +18,13 @@
       </div>
 
       <div class="topbar-actions">
-        <button type="button" id="logout-btn" class="btn-topbar-logout">Sair</button>
+        <button type="button" id="logout-btn" class="btn-outline">Sair</button>
       </div>
     </div>
   </header>
 
   <div class="dashboard-shell">
+    <!-- Barra Lateral Arredondada com 3 Opções -->
     <aside class="nav-card">
       <span class="nav-section-title">MENU PRINCIPAL</span>
 
@@ -32,7 +33,7 @@
           <div class="side-btn-icon">01</div>
           <div class="side-btn-text">
             <strong>Montar Fichas</strong>
-            <small>Treinos A, B, C e cargas</small>
+            <small>Modelos e treinos por dia</small>
           </div>
         </button>
 
@@ -54,95 +55,96 @@
       </nav>
     </aside>
 
+    <!-- Área Principal -->
     <main class="content-card">
-      <!-- ABA 1: MONTAR FICHAS -->
+      <!-- ================================================================
+           ABA 01: CONSTRUTOR DE FICHAS V2 (MODELOS + CATÁLOGO + EDIÇÃO INLINE)
+           ================================================================ -->
       <section id="tab-fichas" class="tab-panel active">
         <div class="content-header">
           <div>
             <h2>Montagem de <span class="text-red">Fichas de Treino</span></h2>
-            <p>Selecione o aluno, defina a divisão e vincule os aparelhos da Techgym.</p>
+            <p>Importe um modelo pronto ou filtre os aparelhos ao lado para montar cada dia.</p>
           </div>
         </div>
 
-        <form id="workout-form" class="inline-builder">
-          <div class="builder-grid">
-            <div class="form-group">
-              <label for="plan-student">Aluno</label>
-              <select id="plan-student" required>
-                <option value="">Selecione o aluno...</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label for="plan-division">Divisão</label>
-              <select id="plan-division" required>
-                <option value="A">Treino A</option>
-                <option value="B">Treino B</option>
-                <option value="C">Treino C</option>
-                <option value="D">Treino D</option>
-                <option value="E">Treino E</option>
-              </select>
-            </div>
-
-            <div class="form-group span-2">
-              <label for="plan-exercise">Exercício / Aparelho</label>
-              <select id="plan-exercise" required>
-                <option value="">Selecione o exercício...</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label for="plan-sets">Séries</label>
-              <input type="number" id="plan-sets" value="3" min="1" required>
-            </div>
-
-            <div class="form-group">
-              <label for="plan-reps">Repetições</label>
-              <input type="text" id="plan-reps" placeholder="10-12" required>
-            </div>
-
-            <div class="form-group">
-              <label for="plan-rest">Descanso (s)</label>
-              <input type="number" id="plan-rest" value="60" min="0">
-            </div>
-
-            <div class="form-group">
-              <label for="plan-notes">Observação</label>
-              <input type="text" id="plan-notes" placeholder="Ex: Drop-set na última">
-            </div>
+        <!-- Barra Superior de Contexto -->
+        <div class="plan-context-bar">
+          <div class="form-group">
+            <label for="plan-student">1. Aluno Selecionado</label>
+            <select id="plan-student">
+              <option value="">Selecione o aluno...</option>
+            </select>
           </div>
 
-          <div class="builder-footer">
-            <button type="submit" class="btn-primary">Adicionar à Ficha</button>
+          <div class="form-group">
+            <label for="plan-split-type">2. Divisão da Ficha</label>
+            <select id="plan-split-type">
+              <option value="Full body">Treino Full body</option>
+              <option value="AB">Treino AB</option>
+              <option value="ABC" selected>Treino ABC</option>
+              <option value="ABCD">Treino ABCD</option>
+              <option value="ABCDE">Treino ABCDE</option>
+            </select>
           </div>
-        </form>
 
-        <div class="divider"></div>
-
-        <div class="table-section-header">
-          <h3>Exercícios na Ficha do Aluno</h3>
-          <span class="badge">Atualização instantânea</span>
+          <button type="button" id="save-as-template-btn" class="btn-dark">
+            Salvar como Modelo Padrão
+          </button>
         </div>
 
-        <div class="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>Treino</th>
-                <th>Aparelho</th>
-                <th>Exercício</th>
-                <th>Séries x Reps</th>
-                <th>Ação</th>
-              </tr>
-            </thead>
-            <tbody id="workout-plan-list">
-              <tr><td colspan="5" class="empty-state">Selecione um aluno acima para carregar a ficha.</td></tr>
-            </tbody>
-          </table>
+        <!-- Grid 2 Colunas: Esquerda (Biblioteca) | Direita (Dias Editáveis) -->
+        <div class="workout-builder-v2">
+          <!-- Coluna Esquerda -->
+          <div class="library-box">
+            <div class="library-switcher">
+              <button type="button" class="lib-tab-btn active" data-lib="lib-catalog">Aparelhos</button>
+              <button type="button" class="lib-tab-btn" data-lib="lib-templates">Modelos Prontos</button>
+            </div>
+
+            <!-- Painel Catálogo de Aparelhos -->
+            <div id="lib-catalog" class="lib-panel">
+              <input type="search" id="catalog-search" placeholder="Buscar aparelho ou nº...">
+
+              <div class="muscle-pills" id="muscle-filter-pills">
+                <button type="button" class="muscle-pill active" data-muscle="ALL">Todos</button>
+                <button type="button" class="muscle-pill" data-muscle="Peito">Peito</button>
+                <button type="button" class="muscle-pill" data-muscle="Costas">Costas</button>
+                <button type="button" class="muscle-pill" data-muscle="Pernas">Pernas</button>
+                <button type="button" class="muscle-pill" data-muscle="Ombros">Ombros</button>
+                <button type="button" class="muscle-pill" data-muscle="Bíceps">Bíceps</button>
+                <button type="button" class="muscle-pill" data-muscle="Tríceps">Tríceps</button>
+              </div>
+
+              <div id="catalog-items-list" class="library-scroll-list">
+                <div class="empty-state">Carregando aparelhos...</div>
+              </div>
+            </div>
+
+            <!-- Painel Modelos Prontos -->
+            <div id="lib-templates" class="lib-panel" style="display: none;">
+              <div id="templates-list" class="library-scroll-list">
+                <div class="empty-state">Carregando modelos...</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Coluna Direita: Abas A/B/C/D/E + Linhas Editáveis -->
+          <div class="days-workspace">
+            <div class="day-tabs-bar" id="day-tabs-container">
+              <!-- Abas Treino A, B, C geradas pelo JS -->
+            </div>
+
+            <div id="day-exercises-editor" class="plan-rows-list">
+              <div class="empty-state">Selecione um aluno acima para começar a montar ou importar a ficha.</div>
+            </div>
+          </div>
         </div>
       </section>
 
-      <!-- ABA 2: ALUNOS -->
+      <!-- ================================================================
+           ABA 02: ALUNOS
+           ================================================================ -->
       <section id="tab-alunos" class="tab-panel">
         <div class="content-header">
           <div>
@@ -194,7 +196,9 @@
         </div>
       </section>
 
-      <!-- ABA 3: APARELHOS & EXERCÍCIOS -->
+      <!-- ================================================================
+           ABA 03: APARELHOS & EXERCÍCIOS
+           ================================================================ -->
       <section id="tab-aparelhos" class="tab-panel">
         <div class="content-header">
           <div>
@@ -204,10 +208,10 @@
         </div>
 
         <form id="exercise-form" class="inline-builder">
-          <div class="builder-grid">
+          <div class="builder-grid-4">
             <div class="form-group">
               <label for="exercise-machine">Nº do Aparelho</label>
-              <input type="text" id="exercise-machine" placeholder="Ex: 01 ou Livre" required>
+              <input type="text" id="exercise-machine" placeholder="Ex: 01 ou LIVRE" required>
             </div>
             <div class="form-group">
               <label for="exercise-muscle">Grupo Muscular</label>
@@ -262,18 +266,28 @@
   </div>
 
   <script>
-    // 1. Alternância imediata das 3 abas laterais
+    // Navegação das 3 abas laterais
     document.querySelectorAll('.side-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.side-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
         btn.classList.add('active');
-        const target = document.getElementById(btn.dataset.tab);
-        if (target) target.classList.add('active');
+        document.getElementById(btn.dataset.tab)?.classList.add('active');
       });
     });
 
-    // 2. Garantia de funcionamento imediato do botão Sair
+    // Alternância interna da biblioteca (Aparelhos vs Modelos Prontos)
+    document.querySelectorAll('.lib-tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.lib-tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.lib-panel').forEach(p => p.style.display = 'none');
+        btn.classList.add('active');
+        const target = document.getElementById(btn.dataset.lib);
+        if (target) target.style.display = 'block';
+      });
+    });
+
+    // Logout imediato
     document.getElementById('logout-btn')?.addEventListener('click', () => {
       localStorage.clear();
       sessionStorage.clear();

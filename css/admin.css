@@ -1,40 +1,19 @@
 /* ==========================================================================
-   TECHGYM ADMIN — TOPBAR + CARD LATERAL DE 3 BOTÕES + CARD DE CONTEÚDO
-   Paleta Fosca: Preto Carvão (#1C1E22), Branco Fosco (#FAFAFB) e Vermelho (#D6242A)
+   TECHGYM ADMIN — LAYOUT LATERAL ARREDONDADO & CONSTRUTOR DE FICHAS V2
    ========================================================================== */
 
-:root {
-  --bg-canvas: #ECEEF2;         /* Fundo geral cinza-gelo fosco */
-  --surface-matte: #FAFAFB;     /* Branco fosco dos cards e topbar */
-  --surface-subtle: #F3F4F7;    /* Caixa interna dos formulários */
-  --black-matte: #1C1E22;       /* Preto fosco da identidade Techgym */
-  --black-soft: #2A2D34;
-  --red-techgym: #D6242A;       /* Vermelho oficial suavizado para tela */
-  --red-techgym-hover: #B81D22;
-  --red-soft: rgba(214, 36, 42, 0.10);
-  --border-matte: #DCDFE6;
-  --text-main: #1C1E22;
-  --text-muted: #646973;
-}
-
-body {
-  background-color: var(--bg-canvas);
-  color: var(--text-main);
-}
-
-/* 1. TOPBAR SUPERIOR COM LOGO NO CANTO ESQUERDO */
 .topbar {
-  background-color: var(--surface-matte);
-  border-bottom: 2px solid var(--border-matte);
+  background-color: var(--surface-card);
+  border-bottom: 1.5px solid var(--border-light);
   padding: 12px 28px;
   position: sticky;
   top: 0;
   z-index: 50;
-  box-shadow: 0 2px 10px rgba(28, 30, 34, 0.04);
+  box-shadow: var(--shadow-sm);
 }
 
 .topbar-inner {
-  max-width: 1380px;
+  max-width: 1440px;
   margin: 0 auto;
   display: flex;
   align-items: center;
@@ -48,14 +27,14 @@ body {
 }
 
 .brand-logo {
-  height: 44px;
+  height: 42px;
   width: auto;
   object-fit: contain;
   display: block;
 }
 
 .logo-text-fallback {
-  font-size: 1.5rem;
+  font-size: 1.45rem;
   font-weight: 900;
   color: var(--black-matte);
 }
@@ -67,102 +46,81 @@ body {
 .env-badge {
   background-color: var(--black-matte);
   color: #F5F6F8;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 700;
   padding: 5px 12px;
   border-radius: 999px;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
-.btn-topbar-logout {
-  background-color: transparent;
-  color: var(--text-main);
-  border: 1.5px solid var(--border-matte);
-  border-radius: 10px;
-  min-height: 38px;
-  padding: 6px 16px;
-  font-size: 0.85rem;
-  font-weight: 700;
-}
-
-.btn-topbar-logout:hover {
-  background-color: var(--black-matte);
-  color: #FFFFFF;
-  border-color: var(--black-matte);
-}
-
-/* 2. SHELL PRINCIPAL: CARD LATERAL ESQUERDO + CARD DE CONTEÚDO À DIREITA */
+/* Shell Principal: Card Lateral Esquerdo + Card Principal */
 .dashboard-shell {
-  max-width: 1380px;
-  margin: 28px auto;
+  max-width: 1440px;
+  margin: 24px auto;
   padding: 0 28px 48px;
   display: grid;
-  grid-template-columns: 280px 1fr;
+  grid-template-columns: 265px 1fr;
   gap: 24px;
   align-items: start;
 }
 
-/* Card Lateral de Navegação */
 .nav-card {
-  background-color: var(--surface-matte);
-  border: 1px solid var(--border-matte);
-  border-radius: 18px;
+  background-color: var(--surface-card);
+  border: 1px solid var(--border-light);
+  border-radius: 20px;
   padding: 20px 16px;
-  box-shadow: 0 6px 20px rgba(28, 30, 34, 0.04);
+  box-shadow: var(--shadow-md);
   position: sticky;
-  top: 96px;
+  top: 90px;
 }
 
 .nav-section-title {
   display: block;
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 800;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   letter-spacing: 0.08em;
-  padding: 0 10px 14px;
+  padding: 0 10px 12px;
 }
 
 .nav-buttons {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
-/* Os 3 Botões da Barra Lateral */
 .side-btn {
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 14px;
-  padding: 14px 16px;
-  background-color: #FFFFFF;
-  border: 1.5px solid var(--border-matte);
+  gap: 13px;
+  padding: 13px 14px;
+  background-color: var(--surface-matte);
+  border: 1.5px solid var(--border-light);
   border-radius: 14px;
   text-align: left;
-  cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .side-btn:hover {
   border-color: var(--black-matte);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(28, 30, 34, 0.06);
+  background-color: #FFFFFF;
 }
 
 .side-btn-icon {
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   border-radius: 10px;
-  background-color: var(--surface-subtle);
+  background-color: #E5E8EF;
   color: var(--black-matte);
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 800;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: all 0.2s ease;
 }
 
 .side-btn-text {
@@ -171,24 +129,23 @@ body {
 }
 
 .side-btn-text strong {
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   font-weight: 800;
   color: var(--black-matte);
   line-height: 1.2;
 }
 
 .side-btn-text small {
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 500;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   margin-top: 2px;
 }
 
-/* Estado Ativo do Botão Lateral (Preto Fosco com Detalhe Vermelho) */
 .side-btn.active {
   background-color: var(--black-matte);
   border-color: var(--black-matte);
-  box-shadow: 0 8px 20px rgba(28, 30, 34, 0.16);
+  box-shadow: var(--shadow-lg);
 }
 
 .side-btn.active .side-btn-icon {
@@ -201,60 +158,287 @@ body {
 }
 
 .side-btn.active .side-btn-text small {
-  color: #B4B9C4;
+  color: #A8AEB9;
 }
 
-/* 3. CARD PRINCIPAL DE CONTEÚDO */
+/* Card de Conteúdo Principal */
 .content-card {
-  background-color: var(--surface-matte);
-  border: 1px solid var(--border-matte);
-  border-radius: 18px;
-  padding: 28px 32px;
-  min-height: 560px;
-  box-shadow: 0 6px 20px rgba(28, 30, 34, 0.04);
+  background-color: var(--surface-card);
+  border: 1px solid var(--border-light);
+  border-radius: 20px;
+  padding: 28px 30px;
+  min-height: 600px;
+  box-shadow: var(--shadow-md);
 }
 
 .tab-panel {
   display: none;
-  animation: panelFade 0.22s ease;
+  animation: fadeSlide 0.2s ease;
 }
 
 .tab-panel.active {
   display: block;
 }
 
-@keyframes panelFade {
-  from { opacity: 0; transform: translateY(6px); }
+@keyframes fadeSlide {
+  from { opacity: 0; transform: translateY(5px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
 .content-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
   margin-bottom: 22px;
+  flex-wrap: wrap;
 }
 
 .content-header h2 {
-  font-size: 1.55rem;
-  color: var(--black-matte);
+  font-size: 1.5rem;
   margin-bottom: 4px;
 }
 
 .content-header p {
-  font-size: 0.92rem;
-  color: var(--text-muted);
+  font-size: 0.9rem;
+  color: var(--text-secondary);
 }
 
-/* Barra Horizontal de Criação (Tira a cara de formulário vertical engessado) */
-.inline-builder {
-  background-color: var(--surface-subtle);
-  border: 1px solid var(--border-matte);
-  border-radius: 14px;
-  padding: 20px;
-}
-
-.builder-grid {
+/* ==========================================================================
+   V2 CONSTRUTOR DE FICHAS (BARRA SUPERIOR + 2 COLUNAS)
+   ========================================================================== */
+.plan-context-bar {
+  background-color: var(--surface-matte);
+  border: 1.5px solid var(--border-light);
+  border-radius: 16px;
+  padding: 16px 20px;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 14px;
+  grid-template-columns: 1.4fr 1fr auto;
+  gap: 16px;
+  align-items: end;
+  margin-bottom: 22px;
+}
+
+.workout-builder-v2 {
+  display: grid;
+  grid-template-columns: 350px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+/* Coluna Esquerda: Biblioteca (Modelos + Catálogo) */
+.library-box {
+  background-color: var(--surface-matte);
+  border: 1.5px solid var(--border-light);
+  border-radius: 16px;
+  padding: 16px;
+}
+
+.library-switcher {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  background-color: #E5E8EF;
+  padding: 4px;
+  border-radius: 12px;
+  margin-bottom: 14px;
+}
+
+.lib-tab-btn {
+  min-height: 36px;
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  border-radius: 9px;
+  background-color: transparent;
+  color: var(--text-secondary);
+}
+
+.lib-tab-btn.active {
+  background-color: #FFFFFF;
+  color: var(--black-matte);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Pílulas de Filtro Muscular */
+.muscle-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0 12px;
+}
+
+.muscle-pill {
+  min-height: 28px;
+  padding: 4px 10px;
+  font-size: 0.74rem;
+  border-radius: 999px;
+  background-color: #FFFFFF;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-light);
+}
+
+.muscle-pill.active {
+  background-color: var(--black-matte);
+  color: #FFFFFF;
+  border-color: var(--black-matte);
+}
+
+.library-scroll-list {
+  max-height: 440px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-right: 4px;
+}
+
+/* Card de Item na Biblioteca */
+.lib-item-card {
+  background-color: #FFFFFF;
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  transition: border-color 0.15s ease;
+}
+
+.lib-item-card:hover {
+  border-color: var(--black-matte);
+}
+
+.lib-item-info strong {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  line-height: 1.25;
+}
+
+.lib-item-info span {
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+}
+
+.template-card {
+  background-color: #FFFFFF;
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.template-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.template-card strong {
+  font-size: 0.88rem;
+  color: var(--text-primary);
+}
+
+.template-card p {
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+}
+
+/* Coluna Direita: Workspace dos Dias (A, B, C, D, E) */
+.days-workspace {
+  background-color: var(--surface-matte);
+  border: 1.5px solid var(--border-light);
+  border-radius: 16px;
+  padding: 18px;
+}
+
+.day-tabs-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-bottom: 14px;
+  border-bottom: 1.5px solid var(--border-light);
+  margin-bottom: 16px;
+}
+
+.day-tab {
+  min-height: 38px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background-color: #FFFFFF;
+  color: var(--text-primary);
+  border: 1.5px solid var(--border-light);
+  font-size: 0.84rem;
+}
+
+.day-tab.active {
+  background-color: var(--red-techgym);
+  color: #FFFFFF;
+  border-color: var(--red-techgym);
+  box-shadow: 0 3px 10px rgba(214, 36, 42, 0.25);
+}
+
+/* Linhas Editáveis Inline (Estilo Planilha Moderna) */
+.plan-rows-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.plan-edit-row {
+  background-color: #FFFFFF;
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: grid;
+  grid-template-columns: 1.5fr 72px 92px 76px 1.2fr auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.plan-edit-row .ex-name-col strong {
+  display: block;
+  font-size: 0.88rem;
+  color: var(--text-primary);
+}
+
+.plan-edit-row input {
+  height: 36px;
+  padding: 0 8px;
+  font-size: 0.84rem;
+  text-align: center;
+}
+
+.plan-edit-row input.notes-input {
+  text-align: left;
+}
+
+.inline-field-label {
+  display: block;
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  margin-bottom: 2px;
+  text-align: center;
+}
+
+.inline-field-label.left {
+  text-align: left;
+}
+
+/* ==========================================================================
+   FORMULÁRIOS E TABELAS DAS ABAS 02 E 03
+   ========================================================================== */
+.inline-builder {
+  background-color: var(--surface-matte);
+  border: 1.5px solid var(--border-light);
+  border-radius: 16px;
+  padding: 20px;
 }
 
 .builder-grid-3 {
@@ -263,98 +447,86 @@ body {
   gap: 14px;
 }
 
-.span-2 {
-  grid-column: span 2;
-}
-
-.form-group label {
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--black-matte);
-  margin-bottom: 5px;
+.builder-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
 }
 
 .builder-footer {
   display: flex;
   justify-content: flex-end;
-  margin-top: 16px;
-}
-
-.builder-footer .btn-primary {
-  background-color: var(--red-techgym);
-  border-radius: 10px;
-  padding: 10px 24px;
-}
-
-.builder-footer .btn-primary:hover {
-  background-color: var(--red-techgym-hover);
+  margin-top: 14px;
 }
 
 .divider {
   height: 1px;
-  background-color: var(--border-matte);
-  margin: 26px 0 20px;
+  background-color: var(--border-light);
+  margin: 24px 0 18px;
 }
 
 .table-section-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
-.table-section-header h3 {
-  font-size: 1.08rem;
-  color: var(--black-matte);
-}
-
-/* Tabela Limpa */
 .table-wrapper {
   width: 100%;
   overflow-x: auto;
-  border-radius: 12px;
-  border: 1px solid var(--border-matte);
+  border-radius: 14px;
+  border: 1px solid var(--border-light);
   background-color: #FFFFFF;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
 }
 
 thead {
   background-color: var(--black-matte);
-  color: #F5F6F8;
+  color: #FFFFFF;
 }
 
 th {
   padding: 13px 16px;
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   text-align: left;
-  white-space: nowrap;
 }
 
 td {
-  padding: 13px 16px;
-  border-bottom: 1px solid var(--border-matte);
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-light);
 }
 
 tbody tr:hover {
-  background-color: #F8F9FB;
+  background-color: var(--surface-matte);
 }
 
 .empty-state {
   text-align: center;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   padding: 32px 16px;
+  font-size: 0.88rem;
 }
 
 /* Responsividade */
-@media (max-width: 1024px) {
+@media (max-width: 1180px) {
+  .workout-builder-v2 {
+    grid-template-columns: 1fr;
+  }
+  .plan-context-bar {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 960px) {
   .dashboard-shell {
     grid-template-columns: 1fr;
     padding: 0 16px 36px;
@@ -369,28 +541,10 @@ tbody tr:hover {
   .side-btn {
     min-width: 210px;
   }
-  .builder-grid, .builder-grid-3 {
+  .plan-edit-row {
     grid-template-columns: 1fr 1fr;
   }
-}
-
-@media (max-width: 600px) {
-  .topbar {
-    padding: 12px 16px;
-  }
-  .brand-logo {
-    height: 36px;
-  }
-  .env-badge {
-    display: none;
-  }
-  .content-card {
-    padding: 20px 16px;
-  }
-  .builder-grid, .builder-grid-3 {
+  .builder-grid-3, .builder-grid-4 {
     grid-template-columns: 1fr;
-  }
-  .span-2 {
-    grid-column: span 1;
   }
 }
