@@ -24,7 +24,6 @@
   </header>
 
   <div class="dashboard-shell">
-    <!-- Barra Lateral Arredondada com 3 Opções -->
     <aside class="nav-card">
       <span class="nav-section-title">MENU</span>
 
@@ -55,20 +54,18 @@
       </nav>
     </aside>
 
-    <!-- Área Principal -->
     <main class="content-card">
       <!-- ================================================================
-           ABA 01: CONSTRUTOR DE FICHAS V2 (MODELOS + CATÁLOGO + EDIÇÃO INLINE)
+           ABA 01: CONSTRUTOR DE FICHAS V2
            ================================================================ -->
       <section id="tab-fichas" class="tab-panel active">
         <div class="content-header">
           <div>
             <h2>Montagem de <span class="text-red">Fichas de Treino</span></h2>
-            <p>Importe um modelo pronto ou filtre os aparelhos ao lado para montar cada dia.</p>
+            <p>Importe um modelo pronto ou busque os aparelhos ao lado para montar cada dia.</p>
           </div>
         </div>
 
-        <!-- Barra Superior de Contexto -->
         <div class="plan-context-bar">
           <div class="form-group">
             <label for="plan-student">1. Aluno Selecionado</label>
@@ -93,25 +90,20 @@
           </button>
         </div>
 
-        <!-- Grid 2 Colunas: Esquerda (Biblioteca) | Direita (Dias Editáveis) -->
         <div class="workout-builder-v2">
-          <!-- Coluna Esquerda -->
           <div class="library-box">
             <div class="library-switcher">
               <button type="button" class="lib-tab-btn active" data-lib="lib-catalog">Aparelhos</button>
               <button type="button" class="lib-tab-btn" data-lib="lib-templates">Modelos Prontos</button>
             </div>
 
-            <!-- Painel Catálogo de Aparelhos -->
-<div id="lib-catalog" class="lib-panel">
-  <input type="search" id="catalog-search" placeholder="Digite o nome ou nº do aparelho...">
+            <div id="lib-catalog" class="lib-panel">
+              <input type="search" id="catalog-search" placeholder="Digite o nome ou nº do aparelho...">
+              <div id="catalog-items-list" class="library-scroll-list" style="margin-top: 12px;">
+                <div class="empty-state">Digite o nome ou nº do aparelho acima para buscar.</div>
+              </div>
+            </div>
 
-  <div id="catalog-items-list" class="library-scroll-list" style="margin-top: 12px;">
-    <div class="empty-state">Digite o nome ou nº do aparelho acima para buscar.</div>
-  </div>
-</div>
-
-            <!-- Painel Modelos Prontos -->
             <div id="lib-templates" class="lib-panel" style="display: none;">
               <div id="templates-list" class="library-scroll-list">
                 <div class="empty-state">Carregando modelos...</div>
@@ -119,12 +111,8 @@
             </div>
           </div>
 
-          <!-- Coluna Direita: Abas A/B/C/D/E + Linhas Editáveis -->
           <div class="days-workspace">
-            <div class="day-tabs-bar" id="day-tabs-container">
-              <!-- Abas Treino A, B, C geradas pelo JS -->
-            </div>
-
+            <div class="day-tabs-bar" id="day-tabs-container"></div>
             <div id="day-exercises-editor" class="plan-rows-list">
               <div class="empty-state">Selecione um aluno acima para começar a montar ou importar a ficha.</div>
             </div>
@@ -133,29 +121,29 @@
       </section>
 
       <!-- ================================================================
-           ABA 02: ALUNOS
+           ABA 02: ALUNOS (COM VALIDAÇÃO DE CPF REAL, BUSCA, EDIÇÃO E EXCLUSÃO)
            ================================================================ -->
       <section id="tab-alunos" class="tab-panel">
         <div class="content-header">
           <div>
             <h2>Gestão de <span class="text-red">Alunos</span></h2>
-            <p>Cadastre novos alunos definindo um usuário simples e o CPF como senha.</p>
+            <p>Cadastre novos alunos com usuário único e CPF válido (usado como senha inicial).</p>
           </div>
         </div>
 
         <form id="student-form" class="inline-builder">
           <div class="builder-grid-3">
             <div class="form-group">
-              <label for="student-name">Nome Completo</label>
-              <input type="text" id="student-name" placeholder="Ex: João Silva" required>
+              <label for="student-name">Nome Completo *</label>
+              <input type="text" id="student-name" placeholder="Ex: João da Silva" minlength="3" required>
             </div>
             <div class="form-group">
-              <label for="student-username">Usuário de Acesso</label>
+              <label for="student-username">Usuário de Acesso *</label>
               <input type="text" id="student-username" placeholder="Ex: joao.silva" autocapitalize="none" required>
             </div>
             <div class="form-group">
-              <label for="student-cpf">CPF (Será a senha)</label>
-              <input type="text" id="student-cpf" inputmode="numeric" placeholder="000.000.000-00" required>
+              <label for="student-cpf">CPF (Será a senha) *</label>
+              <input type="text" id="student-cpf" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" required>
             </div>
           </div>
           <div class="builder-footer">
@@ -165,8 +153,9 @@
 
         <div class="divider"></div>
 
-        <div class="table-section-header">
+        <div class="table-toolbar">
           <h3>Alunos Ativos</h3>
+          <input type="search" id="students-search" placeholder="Pesquisar aluno por nome ou usuário...">
         </div>
 
         <div class="table-wrapper">
@@ -187,24 +176,28 @@
       </section>
 
       <!-- ================================================================
-           ABA 03: APARELHOS & EXERCÍCIOS
+           ABA 03: APARELHOS & EXERCÍCIOS (COM Nº DA MÁQUINA, PESQUISA E EDIÇÃO)
            ================================================================ -->
       <section id="tab-aparelhos" class="tab-panel">
         <div class="content-header">
           <div>
             <h2>Aparelhos &amp; <span class="text-red">Exercícios</span></h2>
-            <p>Cadastre o número das máquinas da Techgym e os links de execução do YouTube.</p>
+            <p>Identifique o número da máquina da academia para facilitar a localização pelo aluno.</p>
           </div>
         </div>
 
         <form id="exercise-form" class="inline-builder">
           <div class="builder-grid-4">
             <div class="form-group">
-              <label for="exercise-machine">Nº do Aparelho</label>
-              <input type="text" id="exercise-machine" placeholder="Ex: 01 ou LIVRE" required>
+              <label for="exercise-machine">Nº / Código da Máquina *</label>
+              <input type="text" id="exercise-machine" placeholder="Ex: 01, 14B ou LIVRE" maxlength="12" required>
             </div>
             <div class="form-group">
-              <label for="exercise-muscle">Grupo Muscular</label>
+              <label for="exercise-name">Nome do Exercício *</label>
+              <input type="text" id="exercise-name" placeholder="Ex: Supino Reto Máquina" minlength="3" required>
+            </div>
+            <div class="form-group">
+              <label for="exercise-muscle">Grupo Muscular *</label>
               <select id="exercise-muscle" required>
                 <option value="Peito">Peito</option>
                 <option value="Costas">Costas</option>
@@ -216,11 +209,7 @@
               </select>
             </div>
             <div class="form-group">
-              <label for="exercise-name">Nome do Exercício</label>
-              <input type="text" id="exercise-name" placeholder="Ex: Supino Reto Máquina" required>
-            </div>
-            <div class="form-group">
-              <label for="exercise-video">Link do YouTube</label>
+              <label for="exercise-video">Link do YouTube (Opcional)</label>
               <input type="url" id="exercise-video" placeholder="https://www.youtube.com/watch?v=...">
             </div>
           </div>
@@ -231,19 +220,20 @@
 
         <div class="divider"></div>
 
-        <div class="table-section-header">
+        <div class="table-toolbar">
           <h3>Catálogo da Academia</h3>
+          <input type="search" id="exercises-table-search" placeholder="Pesquisar por nº da máquina, exercício ou grupo...">
         </div>
 
         <div class="table-wrapper">
           <table>
             <thead>
               <tr>
-                <th>Máq.</th>
+                <th>Nº Máquina</th>
                 <th>Exercício</th>
                 <th>Grupo</th>
                 <th>Vídeo</th>
-                <th>Ação</th>
+                <th>Ações</th>
               </tr>
             </thead>
             <tbody id="exercises-list">
@@ -255,8 +245,77 @@
     </main>
   </div>
 
+  <!-- ======================================================================
+       MODAL DE EDIÇÃO DE ALUNO
+       ====================================================================== -->
+  <div id="edit-student-modal" class="admin-modal-backdrop" style="display: none;" role="dialog" aria-modal="true">
+    <div class="admin-modal-card">
+      <div class="admin-modal-header">
+        <h3>Editar Dados do Aluno</h3>
+        <button type="button" class="btn-sm btn-outline" onclick="closeStudentModal()">✕</button>
+      </div>
+      <form id="edit-student-form" class="admin-modal-form">
+        <input type="hidden" id="edit-student-id">
+        <div class="form-group">
+          <label for="edit-student-name">Nome Completo *</label>
+          <input type="text" id="edit-student-name" minlength="3" required>
+        </div>
+        <div class="form-group">
+          <label for="edit-student-username">Usuário de Acesso *</label>
+          <input type="text" id="edit-student-username" autocapitalize="none" required>
+        </div>
+        <div class="admin-modal-actions">
+          <button type="button" class="btn-outline" onclick="closeStudentModal()">Cancelar</button>
+          <button type="submit" class="btn-primary">Salvar Alterações</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       MODAL DE EDIÇÃO DE APARELHO / EXERCÍCIO
+       ====================================================================== -->
+  <div id="edit-exercise-modal" class="admin-modal-backdrop" style="display: none;" role="dialog" aria-modal="true">
+    <div class="admin-modal-card">
+      <div class="admin-modal-header">
+        <h3>Editar Aparelho / Exercício</h3>
+        <button type="button" class="btn-sm btn-outline" onclick="closeExerciseModal()">✕</button>
+      </div>
+      <form id="edit-exercise-form" class="admin-modal-form">
+        <input type="hidden" id="edit-exercise-id">
+        <div class="form-group">
+          <label for="edit-exercise-machine">Nº / Código da Máquina *</label>
+          <input type="text" id="edit-exercise-machine" maxlength="12" required>
+        </div>
+        <div class="form-group">
+          <label for="edit-exercise-name">Nome do Exercício *</label>
+          <input type="text" id="edit-exercise-name" minlength="3" required>
+        </div>
+        <div class="form-group">
+          <label for="edit-exercise-muscle">Grupo Muscular *</label>
+          <select id="edit-exercise-muscle" required>
+            <option value="Peito">Peito</option>
+            <option value="Costas">Costas</option>
+            <option value="Pernas">Pernas</option>
+            <option value="Ombros">Ombros</option>
+            <option value="Bíceps">Bíceps</option>
+            <option value="Tríceps">Tríceps</option>
+            <option value="Abdômen / Cardio">Abdômen / Cardio</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="edit-exercise-video">Link do YouTube</label>
+          <input type="url" id="edit-exercise-video" placeholder="https://www.youtube.com/watch?v=...">
+        </div>
+        <div class="admin-modal-actions">
+          <button type="button" class="btn-outline" onclick="closeExerciseModal()">Cancelar</button>
+          <button type="submit" class="btn-primary">Salvar Alterações</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
-    // Navegação das 3 abas laterais
     document.querySelectorAll('.side-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.side-btn').forEach(b => b.classList.remove('active'));
@@ -266,7 +325,6 @@
       });
     });
 
-    // Alternância interna da biblioteca (Aparelhos vs Modelos Prontos)
     document.querySelectorAll('.lib-tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.lib-tab-btn').forEach(b => b.classList.remove('active'));
@@ -277,7 +335,6 @@
       });
     });
 
-    // Logout imediato
     document.getElementById('logout-btn')?.addEventListener('click', () => {
       localStorage.clear();
       sessionStorage.clear();
