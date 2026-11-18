@@ -11,7 +11,6 @@ let activeSplitType = 'ABC';
 let activeDay = 'A';
 let catalogSearchTerm = '';
 let templatesSearchTerm = '';
-const templatesSearchInput = document.getElementById('templates-search');
 let studentsTableSearch = '';
 let exercisesTableSearch = '';
 
@@ -24,6 +23,7 @@ const saveTemplateBtn = document.getElementById('save-as-template-btn');
 
 const catalogSearchInput = document.getElementById('catalog-search');
 const catalogItemsList = document.getElementById('catalog-items-list');
+const templatesSearchInput = document.getElementById('templates-search');
 const templatesListEl = document.getElementById('templates-list');
 const dayTabsContainer = document.getElementById('day-tabs-container');
 const dayExercisesEditor = document.getElementById('day-exercises-editor');
@@ -51,6 +51,14 @@ const SPLIT_DAYS = {
   'ABCDE': ['A', 'B', 'C', 'D', 'E']
 };
 
+const AVAILABLE_PLANS = [
+  'Mensal',
+  'Trimestral',
+  'Semestral',
+  'Anual',
+  'Gympass / TotalPass'
+];
+
 if (logoutBtn) {
   logoutBtn.addEventListener('click', async (e) => {
     e.preventDefault();
@@ -59,7 +67,7 @@ if (logoutBtn) {
 }
 
 // ==========================================================================
-// 0. SISTEMA DE NOTIFICAÇÕES TOAST, CONFIRMAÇÃO E VALIDAÇÃO INLINE
+// 0. NOTIFICAÇÕES TOAST, CONFIRMAÇÃO E VALIDAÇÃO INLINE
 // ==========================================================================
 function showToast(title, message, type = 'success') {
   if (!toastContainer) return;
@@ -127,7 +135,6 @@ function clearFormErrors(pairs) {
   pairs.forEach(([inputId, errId]) => clearFieldError(inputId, errId));
 }
 
-// Limpa o vermelho automaticamente quando o usuário volta a digitar no campo
 [
   ['student-name', 'err-student-name'],
   ['student-username', 'err-student-username'],
@@ -145,7 +152,7 @@ function clearFormErrors(pairs) {
 });
 
 // ==========================================================================
-// 1. VALIDADORES DE CPF (MÓDULO 11), USUÁRIO E YOUTUBE
+// 1. VALIDADORES (CPF MÓDULO 11, USUÁRIO E YOUTUBE)
 // ==========================================================================
 function formatCpfMask(value) {
   const digits = value.replace(/\D/g, '').slice(0, 11);
@@ -208,7 +215,107 @@ document.getElementById('edit-student-username')?.addEventListener('input', (e) 
 });
 
 // ==========================================================================
-// 2. ABA 01 — BUSCA SOB DEMANDA DE APARELHOS NA FICHA
+// 2. ABA 01 — DASHBOARD (KPIs, PLANOS E ALUNOS SEM FICHA)
+// ==========================================================================
+async function refreshDashboardMetrics() {
+  const totalStudents = allStudents.length;
+  const kpiTotalEl = document.getElementById('kpi-total-students');
+  if (kpiTotalEl) kpiTotalEl.textContent = String(totalStudents);
+
+  // Check-ins de hoje
+  const now = new Date();
+  const offset = now.getTimezoneOffset() * 60000;
+  const todayISO = new Date(now.getTime() - offset).toISOString().split('T')[0];
+
+  const { data: todayAttendance } = await supabase
+    .from('attendance')
+    .select('id')
+    .eq('check_in_date', todayISO);
+
+  const kpiCheckinsEl = document.getElementById('kpi-today-checkins');
+  if (kpiCheckinsEl) kpiCheckinsEl.textContent = String(todayAttendance?.length || 0);
+
+  // Alunos com ficha vs sem ficha
+  const { data: activePlansData } = await supabase
+    .from('workout_plans')
+    .select('student_id');
+
+  const studentsWithWorkoutSet = new Set((activePlansData || []).map(p => p.student_id));
+  const withWorkoutCount = allStudents.filter(s => studentsWithWorkoutSet.has(s.id)).length;
+  const withoutWorkoutList = allStudents.filter(s => !studentsWithWorkoutSet.has(s.id));
+
+  const kpiWithWorkoutEl = document.getElementById('kpi-with-workout');
+  const kpiWithoutSubEl = document.getElementById('kpi-without-workout-sub');
+  if (kpiWithWorkoutEl) kpiWithWorkoutEl.textContent = String(withWorkoutCount);
+  if (kpiWithoutSubEl) kpiWithoutSubEl.textContent = `${withoutWorkoutList.length} aguardando ficha`;
+
+  // Contagem por tipo de plano
+  const planCounts = {};
+  AVAILABLE_PLANS.forEach(p => { planCounts[p] = 0; });
+
+  allStudents.forEach(st => {
+    const plan = st.plan_type && planCounts.hasOwnProperty(st.plan_type) ? st.plan_type : 'Mensal';
+    planCounts[plan] += 1;
+  });
+
+  // Descobre o plano líder
+  let topPlanName = '—';
+  let topPlanCount = 0;
+  Object.entries(planCounts).forEach(([planName, count]) => {
+    if (count > topPlanCount) {
+      topPlanCount = count;
+      topPlanName = planName;
+    }
+  });
+
+  const kpiTopPlanEl = document.getElementById('kpi-top-plan');
+  const kpiTopPlanSubEl = document.getElementById('kpi-top-plan-count');
+  if (kpiTopPlanEl) kpiTopPlanEl.textContent = topPlanName;
+  if (kpiTopPlanSubEl) kpiTopPlanSubEl.textContent = `${topPlanCount} ${topPlanCount === 1 ? 'aluno' : 'alunos'} neste plano`;
+
+  // Renderiza barras de distribuição por plano
+  const plansListEl = document.getElementById('plans-breakdown-list');
+  if (plansListEl) {
+    plansListEl.innerHTML = AVAILABLE_PLANS.map(planName => {
+      const count = planCounts[planName] || 0;
+      const pct = totalStudents > 0 ? Math.round((count / totalStudents) * 100) : 0;
+      return `
+        <div class="plan-stat-row">
+          <div class="plan-stat-top">
+            <strong>${escapeHtml(planName)}</strong>
+            <span><strong>${count}</strong> ${count === 1 ? 'aluno' : 'alunos'} (${pct}%)</span>
+          </div>
+          <div class="plan-stat-track">
+            <div class="plan-stat-fill" style="width: ${pct}%;"></div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Renderiza lista de alunos aguardando ficha
+  const pendingListEl = document.getElementById('pending-students-list');
+  if (pendingListEl) {
+    if (!withoutWorkoutList.length) {
+      pendingListEl.innerHTML = '<div class="empty-state">Todos os alunos ativos já possuem ficha montada!</div>';
+    } else {
+      pendingListEl.innerHTML = withoutWorkoutList.slice(0, 6).map(st => `
+        <div class="pending-student-item">
+          <div>
+            <strong style="display:block; font-size:0.86rem;">${escapeHtml(st.full_name)}</strong>
+            <span style="font-size:0.74rem; color:var(--text-secondary);">${escapeHtml(st.plan_type || 'Mensal')}</span>
+          </div>
+          <button type="button" class="btn-sm btn-primary" onclick="openStudentWorkout('${st.id}')">
+            Montar Ficha
+          </button>
+        </div>
+      `).join('');
+    }
+  }
+}
+
+// ==========================================================================
+// 3. ABA 02 — CONSTRUTOR DE FICHAS (BUSCA APARELHOS + BUSCA MODELOS)
 // ==========================================================================
 function renderCatalogList() {
   if (!catalogItemsList) return;
@@ -230,7 +337,7 @@ function renderCatalogList() {
       <div class="empty-state" style="padding: 20px 12px;">
         Nenhum aparelho encontrado para <strong>"${escapeHtml(term)}"</strong>.<br><br>
         <button type="button" class="btn-primary btn-sm" style="width:100%;" onclick="quickCreateAndAddExercise()">
-          + Cadastrar "${escapeHtml(term)}" e adicionar
+          + Cadastrar "${escapeHtml(term)}"
         </button>
       </div>`;
     return;
@@ -256,20 +363,8 @@ if (catalogSearchInput) {
   });
 }
 
-window.quickCreateAndAddExercise = async () => {
-  const studentId = planStudentSelect?.value;
-  if (!studentId) {
-    showToast('Selecione um aluno', 'Escolha um aluno no topo antes de adicionar exercícios.', 'error');
-    return;
-  }
-
+window.quickCreateAndAddExercise = () => {
   const name = catalogSearchTerm.trim();
-  if (name.length < 3) {
-    showToast('Nome muito curto', 'Digite pelo menos 3 caracteres para cadastrar o exercício.', 'error');
-    return;
-  }
-
-  // Redireciona para a aba de Aparelhos já preenchendo o nome
   document.querySelector('.side-btn[data-tab="tab-aparelhos"]')?.click();
   const nameInput = document.getElementById('exercise-name');
   const machineInput = document.getElementById('exercise-machine');
@@ -278,9 +373,6 @@ window.quickCreateAndAddExercise = async () => {
   showToast('Novo Aparelho', 'Informe o número da máquina e o grupo muscular para salvar.', 'success');
 };
 
-// / ==========================================================================
-// 3. MODELOS PRONTOS E WORKSPACE DA FICHA
-// ==========================================================================
 async function loadTemplates() {
   const { data, error } = await supabase
     .from('workout_templates')
@@ -296,8 +388,6 @@ function renderTemplatesList() {
   if (!templatesListEl) return;
 
   const term = templatesSearchTerm.trim().toLowerCase();
-
-  // Se o instrutor digitou algo na busca, pesquisa em TODOS os modelos; senão prioriza a divisão ativa
   const baseList = term
     ? allTemplates
     : (allTemplates.filter(t => t.split_type === activeSplitType).length
@@ -335,31 +425,6 @@ if (templatesSearchInput) {
     templatesSearchTerm = e.target.value;
     renderTemplatesList();
   });
-}
-
-function renderTemplatesList() {
-  if (!templatesListEl) return;
-
-  const filtered = allTemplates.filter(t => t.split_type === activeSplitType);
-  const listToShow = filtered.length ? filtered : allTemplates;
-
-  if (!listToShow.length) {
-    templatesListEl.innerHTML = '<div class="empty-state">Nenhum modelo salvo ainda.</div>';
-    return;
-  }
-
-  templatesListEl.innerHTML = listToShow.map(tpl => `
-    <div class="template-card">
-      <div class="template-card-top">
-        <strong>${escapeHtml(tpl.name)}</strong>
-        <span class="badge badge-red">${escapeHtml(tpl.split_type)}</span>
-      </div>
-      <p>${escapeHtml(tpl.description || 'Modelo padrão da Techgym')}</p>
-      <button type="button" class="btn-dark btn-sm" style="width:100%;" onclick="applyTemplateToStudent('${tpl.id}', '${tpl.split_type}')">
-        Importar para o Aluno
-      </button>
-    </div>
-  `).join('');
 }
 
 window.applyTemplateToStudent = async (templateId, splitType) => {
@@ -409,6 +474,7 @@ window.applyTemplateToStudent = async (templateId, splitType) => {
   activeDay = 'A';
   renderDayTabs();
   await loadStudentPlans(studentId);
+  await refreshDashboardMetrics();
   showToast('Modelo Aplicado!', `Ficha ${splitType} importada com sucesso para o aluno.`, 'success');
 };
 
@@ -622,6 +688,7 @@ window.quickAddExercise = async (exerciseId) => {
   }
 
   await loadStudentPlans(studentId);
+  await refreshDashboardMetrics();
   showToast('Exercício Adicionado', `Incluído no Treino ${activeDay}.`, 'success');
 };
 
@@ -649,16 +716,17 @@ window.deleteWorkoutItem = async (itemId) => {
   }
   if (planStudentSelect?.value) {
     await loadStudentPlans(planStudentSelect.value);
+    await refreshDashboardMetrics();
   }
 };
 
 // ==========================================================================
-// 4. ABA 02 — GESTÃO DE ALUNOS (VALIDAÇÃO INLINE, PESQUISA, EDIÇÃO E EXCLUSÃO)
+// 4. ABA 03 — GESTÃO DE ALUNOS (COM PLANO, VALIDAÇÃO, BUSCA, EDIÇÃO E EXCLUSÃO)
 // ==========================================================================
 async function loadStudents() {
   const { data: profiles, error } = await supabase
     .from('profiles')
-    .select('id, full_name, username, role')
+    .select('id, full_name, username, role, plan_type')
     .eq('role', 'student')
     .order('full_name', { ascending: true });
 
@@ -695,6 +763,7 @@ async function loadStudents() {
   }
 
   renderStudentsTable();
+  await refreshDashboardMetrics();
 }
 
 function renderStudentsTable() {
@@ -704,11 +773,12 @@ function renderStudentsTable() {
   const filtered = allStudents.filter(st => {
     const nameMatch = (st.full_name || '').toLowerCase().includes(term);
     const userMatch = (st.username || '').toLowerCase().includes(term);
-    return !term || nameMatch || userMatch;
+    const planMatch = (st.plan_type || '').toLowerCase().includes(term);
+    return !term || nameMatch || userMatch || planMatch;
   });
 
   if (!filtered.length) {
-    studentsList.innerHTML = '<tr><td colspan="4" class="empty-state">Nenhum aluno encontrado para esta pesquisa.</td></tr>';
+    studentsList.innerHTML = '<tr><td colspan="5" class="empty-state">Nenhum aluno encontrado para esta pesquisa.</td></tr>';
     return;
   }
 
@@ -721,6 +791,7 @@ function renderStudentsTable() {
       <tr>
         <td><strong>${escapeHtml(st.full_name)}</strong></td>
         <td><span class="badge">${escapeHtml(st.username || '—')}</span></td>
+        <td><span class="badge badge-red">${escapeHtml(st.plan_type || 'Mensal')}</span></td>
         <td><span class="badge">${lastDate}</span></td>
         <td class="actions-cell">
           <button type="button" class="btn-sm btn-dark" onclick="openStudentWorkout('${st.id}')">Ficha</button>
@@ -745,7 +816,6 @@ window.openStudentWorkout = async (studentId) => {
   await loadStudentPlans(studentId);
 };
 
-// Cadastro de Aluno com Validação Inline (Campos Vermelhos + Descrição)
 if (studentForm) {
   studentForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -758,6 +828,7 @@ if (studentForm) {
     const fullName = document.getElementById('student-name').value.trim();
     const rawUsername = sanitizeUsername(document.getElementById('student-username').value);
     const rawCpf = document.getElementById('student-cpf').value;
+    const planType = document.getElementById('student-plan')?.value || 'Mensal';
 
     let hasError = false;
 
@@ -819,7 +890,8 @@ if (studentForm) {
         id: signUpData.user.id,
         full_name: fullName,
         username: rawUsername,
-        role: 'student'
+        role: 'student',
+        plan_type: planType
       }]);
     }
 
@@ -828,12 +900,11 @@ if (studentForm) {
       submitBtn.textContent = 'Cadastrar Aluno';
     }
     studentForm.reset();
-    showToast('Aluno Cadastrado!', `${fullName} já pode acessar com usuário "${rawUsername}".`, 'success');
+    showToast('Aluno Cadastrado!', `${fullName} (${planType}) cadastrado com sucesso.`, 'success');
     await loadStudents();
   });
 }
 
-// Modal de Edição de Aluno
 window.openEditStudentModal = (studentId) => {
   const st = allStudents.find(s => s.id === studentId);
   if (!st || !editStudentModal) return;
@@ -846,6 +917,8 @@ window.openEditStudentModal = (studentId) => {
   document.getElementById('edit-student-id').value = st.id;
   document.getElementById('edit-student-name').value = st.full_name || '';
   document.getElementById('edit-student-username').value = st.username || '';
+  const planSelect = document.getElementById('edit-student-plan');
+  if (planSelect) planSelect.value = st.plan_type || 'Mensal';
   editStudentModal.style.display = 'flex';
 };
 
@@ -864,6 +937,7 @@ if (editStudentForm) {
     const id = document.getElementById('edit-student-id').value;
     const fullName = document.getElementById('edit-student-name').value.trim();
     const username = sanitizeUsername(document.getElementById('edit-student-username').value);
+    const planType = document.getElementById('edit-student-plan')?.value || 'Mensal';
 
     let hasError = false;
     if (fullName.length < 3 || !fullName.includes(' ')) {
@@ -882,7 +956,7 @@ if (editStudentForm) {
 
     const { error } = await supabase
       .from('profiles')
-      .update({ full_name: fullName, username })
+      .update({ full_name: fullName, username, plan_type: planType })
       .eq('id', id);
 
     if (error) {
@@ -891,7 +965,7 @@ if (editStudentForm) {
     }
 
     window.closeStudentModal();
-    showToast('Aluno Atualizado!', 'Os dados do aluno foram salvos.', 'success');
+    showToast('Aluno Atualizado!', 'Os dados e o plano do aluno foram salvos.', 'success');
     await loadStudents();
   });
 }
@@ -924,7 +998,7 @@ window.deleteStudent = async (studentId, studentName) => {
 };
 
 // ==========================================================================
-// 5. ABA 03 — APARELHOS AGRUPADOS POR GRUPO MUSCULAR + PESQUISA
+// 5. ABA 04 — APARELHOS AGRUPADOS POR GRUPO MUSCULAR + PESQUISA
 // ==========================================================================
 const MUSCLE_GROUPS_ORDER = [
   'Peito',
@@ -978,7 +1052,6 @@ function renderGroupedExercises() {
     return;
   }
 
-  // Agrupa os exercícios filtrados
   const grouped = {};
   filtered.forEach(ex => {
     const cat = normalizeMuscleCategory(ex.muscle_group);

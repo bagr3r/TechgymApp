@@ -8,7 +8,6 @@
   <link rel="stylesheet" href="./css/admin.css">
 </head>
 <body>
-  <!-- Container de Notificações Toast Personalizadas -->
   <div id="toast-container" class="toast-container" aria-live="polite"></div>
 
   <header class="topbar">
@@ -27,13 +26,21 @@
   </header>
 
   <div class="dashboard-shell">
-    <!-- Menu Flutuante -->
+    <!-- Menu Flutuante com 4 Opções -->
     <aside class="nav-card">
       <span class="nav-section-title">MENU</span>
 
       <nav class="nav-buttons" aria-label="Navegação do Painel">
-        <button type="button" class="side-btn active" data-tab="tab-fichas">
+        <button type="button" class="side-btn active" data-tab="tab-dashboard">
           <div class="side-btn-icon">01</div>
+          <div class="side-btn-text">
+            <strong>Dashboard</strong>
+            <small>Alunos ativos e planos</small>
+          </div>
+        </button>
+
+        <button type="button" class="side-btn" data-tab="tab-fichas">
+          <div class="side-btn-icon">02</div>
           <div class="side-btn-text">
             <strong>Montar Fichas</strong>
             <small>Modelos e treinos por dia</small>
@@ -41,7 +48,7 @@
         </button>
 
         <button type="button" class="side-btn" data-tab="tab-alunos">
-          <div class="side-btn-icon">02</div>
+          <div class="side-btn-icon">03</div>
           <div class="side-btn-text">
             <strong>Alunos</strong>
             <small>Cadastros e frequência</small>
@@ -49,7 +56,7 @@
         </button>
 
         <button type="button" class="side-btn" data-tab="tab-aparelhos">
-          <div class="side-btn-icon">03</div>
+          <div class="side-btn-icon">04</div>
           <div class="side-btn-text">
             <strong>Aparelhos</strong>
             <small>Máquinas e vídeos</small>
@@ -60,9 +67,65 @@
 
     <main class="content-card">
       <!-- ================================================================
-           ABA 01: CONSTRUTOR DE FICHAS V2
+           ABA 01: DASHBOARD (VISÃO GERAL E PLANOS)
            ================================================================ -->
-      <section id="tab-fichas" class="tab-panel active">
+      <section id="tab-dashboard" class="tab-panel active">
+        <div class="content-header">
+          <div>
+            <h2>Visão Geral da <span class="text-red">Techgym</span></h2>
+            <p>Acompanhe o total de alunos ativos, frequência diária e distribuição por plano.</p>
+          </div>
+        </div>
+
+        <div class="kpi-grid">
+          <div class="kpi-card highlight">
+            <span class="kpi-label">Alunos Ativos</span>
+            <strong class="kpi-value" id="kpi-total-students">0</strong>
+            <span class="kpi-sub">Matrículas cadastradas</span>
+          </div>
+
+          <div class="kpi-card">
+            <span class="kpi-label">Check-ins Hoje</span>
+            <strong class="kpi-value" id="kpi-today-checkins">0</strong>
+            <span class="kpi-sub">Presenças registradas hoje</span>
+          </div>
+
+          <div class="kpi-card">
+            <span class="kpi-label">Fichas Montadas</span>
+            <strong class="kpi-value" id="kpi-with-workout">0</strong>
+            <span class="kpi-sub" id="kpi-without-workout-sub">0 aguardando ficha</span>
+          </div>
+
+          <div class="kpi-card">
+            <span class="kpi-label">Plano Principal</span>
+            <strong class="kpi-value" id="kpi-top-plan" style="font-size: 1.4rem;">—</strong>
+            <span class="kpi-sub" id="kpi-top-plan-count">0 alunos neste plano</span>
+          </div>
+        </div>
+
+        <div class="dashboard-split-grid">
+          <div class="dash-panel-box">
+            <h3>Alunos por Tipo de Plano</h3>
+            <p class="dash-panel-sub">Distribuição atual das modalidades cadastradas na academia.</p>
+            <div id="plans-breakdown-list" class="plans-breakdown-list">
+              <div class="empty-state">Calculando indicadores...</div>
+            </div>
+          </div>
+
+          <div class="dash-panel-box">
+            <h3>Alunos Aguardando Ficha</h3>
+            <p class="dash-panel-sub">Alunos cadastrados que ainda não possuem exercícios vinculados.</p>
+            <div id="pending-students-list" class="pending-students-list">
+              <div class="empty-state">Verificando fichas...</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================
+           ABA 02: CONSTRUTOR DE FICHAS V2
+           ================================================================ -->
+      <section id="tab-fichas" class="tab-panel">
         <div class="content-header">
           <div>
             <h2>Montagem de <span class="text-red">Fichas de Treino</span></h2>
@@ -110,10 +173,11 @@
 
             <div id="lib-templates" class="lib-panel" style="display: none;">
               <input type="search" id="templates-search" placeholder="Buscar modelo por nome ou divisão...">
-            <div id="templates-list" class="library-scroll-list" style="margin-top: 12px;">
-          <div class="empty-state">Carregando modelos...</div>
-      </div>
-</div>
+              <div id="templates-list" class="library-scroll-list" style="margin-top: 12px;">
+                <div class="empty-state">Carregando modelos...</div>
+              </div>
+            </div>
+          </div>
 
           <div class="days-workspace">
             <div class="day-tabs-bar" id="day-tabs-container"></div>
@@ -125,18 +189,18 @@
       </section>
 
       <!-- ================================================================
-           ABA 02: ALUNOS (VALIDAÇÃO INLINE, PESQUISA, EDIÇÃO E EXCLUSÃO)
+           ABA 03: ALUNOS (COM PLANO, VALIDAÇÃO INLINE, PESQUISA, EDIÇÃO E EXCLUSÃO)
            ================================================================ -->
       <section id="tab-alunos" class="tab-panel">
         <div class="content-header">
           <div>
             <h2>Gestão de <span class="text-red">Alunos</span></h2>
-            <p>Cadastre novos alunos com usuário único e CPF válido (usado como senha inicial).</p>
+            <p>Cadastre novos alunos com usuário único, plano e CPF válido (usado como senha inicial).</p>
           </div>
         </div>
 
         <form id="student-form" class="inline-builder" novalidate>
-          <div class="builder-grid-3">
+          <div class="builder-grid-4">
             <div class="form-group">
               <label for="student-name">Nome Completo *</label>
               <input type="text" id="student-name" placeholder="Ex: João da Silva">
@@ -152,6 +216,17 @@
               <input type="text" id="student-cpf" inputmode="numeric" maxlength="14" placeholder="000.000.000-00">
               <small class="field-error-msg" id="err-student-cpf"></small>
             </div>
+            <div class="form-group">
+              <label for="student-plan">Plano / Convênio *</label>
+              <select id="student-plan">
+                <option value="Mensal">Plano Mensal</option>
+                <option value="Trimestral">Plano Trimestral</option>
+                <option value="Semestral">Plano Semestral</option>
+                <option value="Anual">Plano Anual</option>
+                <option value="Gympass / TotalPass">Gympass / TotalPass</option>
+              </select>
+              <small class="field-error-msg"></small>
+            </div>
           </div>
           <div class="builder-footer">
             <button type="submit" class="btn-primary">Cadastrar Aluno</button>
@@ -162,7 +237,7 @@
 
         <div class="table-toolbar">
           <h3>Alunos Ativos</h3>
-          <input type="search" id="students-search" placeholder="Pesquisar aluno por nome ou usuário...">
+          <input type="search" id="students-search" placeholder="Pesquisar aluno por nome, usuário ou plano...">
         </div>
 
         <div class="table-wrapper">
@@ -171,19 +246,20 @@
               <tr>
                 <th>Nome</th>
                 <th>Usuário</th>
+                <th>Plano</th>
                 <th>Último Check-in</th>
                 <th>Ações</th>
               </tr>
             </thead>
             <tbody id="students-list">
-              <tr><td colspan="4" class="empty-state">Carregando lista de alunos...</td></tr>
+              <tr><td colspan="5" class="empty-state">Carregando lista de alunos...</td></tr>
             </tbody>
           </table>
         </div>
       </section>
 
       <!-- ================================================================
-           ABA 03: APARELHOS (AGRUPAMENTO MUSCULAR, PESQUISA E VALIDAÇÃO INLINE)
+           ABA 04: APARELHOS
            ================================================================ -->
       <section id="tab-aparelhos" class="tab-panel">
         <div class="content-header">
@@ -242,9 +318,7 @@
     </main>
   </div>
 
-  <!-- ======================================================================
-       MODAL DE EDIÇÃO DE ALUNO
-       ====================================================================== -->
+  <!-- MODAL DE EDIÇÃO DE ALUNO -->
   <div id="edit-student-modal" class="admin-modal-backdrop" style="display: none;" role="dialog" aria-modal="true">
     <div class="admin-modal-card">
       <div class="admin-modal-header">
@@ -263,6 +337,16 @@
           <input type="text" id="edit-student-username" autocapitalize="none">
           <small class="field-error-msg" id="err-edit-student-username"></small>
         </div>
+        <div class="form-group">
+          <label for="edit-student-plan">Plano / Convênio *</label>
+          <select id="edit-student-plan">
+            <option value="Mensal">Plano Mensal</option>
+            <option value="Trimestral">Plano Trimestral</option>
+            <option value="Semestral">Plano Semestral</option>
+            <option value="Anual">Plano Anual</option>
+            <option value="Gympass / TotalPass">Gympass / TotalPass</option>
+          </select>
+        </div>
         <div class="admin-modal-actions">
           <button type="button" class="btn-outline" onclick="closeStudentModal()">Cancelar</button>
           <button type="submit" class="btn-primary">Salvar Alterações</button>
@@ -271,9 +355,7 @@
     </div>
   </div>
 
-  <!-- ======================================================================
-       MODAL DE EDIÇÃO DE APARELHO / EXERCÍCIO
-       ====================================================================== -->
+  <!-- MODAL DE EDIÇÃO DE APARELHO / EXERCÍCIO -->
   <div id="edit-exercise-modal" class="admin-modal-backdrop" style="display: none;" role="dialog" aria-modal="true">
     <div class="admin-modal-card">
       <div class="admin-modal-header">
@@ -316,9 +398,7 @@
     </div>
   </div>
 
-  <!-- ======================================================================
-       MODAL DE CONFIRMAÇÃO PERSONALIZADO TECHGYM (SUBSTITUI CONFIRM())
-       ====================================================================== -->
+  <!-- MODAL DE CONFIRMAÇÃO PERSONALIZADO -->
   <div id="confirm-modal" class="admin-modal-backdrop" style="display: none;" role="dialog" aria-modal="true">
     <div class="admin-modal-card">
       <div class="admin-modal-header">
