@@ -1,5 +1,5 @@
 import { checkAuth, logout } from './auth.js';
-import { bindLiveErrorClearing, showConfirmDialog, showToast } from './admin/ui.js';
+import { bindLiveErrorClearing, initAuditLogUI, showConfirmDialog, showToast } from './admin/ui.js';
 import { refreshDashboardMetrics } from './admin/dashboard.js';
 import { createWorkoutBuilder } from './admin/workoutBuilder.js';
 import { createStudentsManager } from './admin/students.js';
@@ -97,6 +97,7 @@ const exercisesManager = createExercisesManager(state, {
 });
 
 (async function init() {
+  initAuditLogUI();
   const auth = await checkAuth('admin');
   if (!auth) return;
   document.body.style.visibility = 'visible';

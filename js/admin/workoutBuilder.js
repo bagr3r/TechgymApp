@@ -1,5 +1,5 @@
 import { supabase } from '../config.js';
-import { escapeHtml, showToast, showConfirmDialog } from './ui.js';
+import { escapeHtml, showToast, showConfirmDialog, recordAuditLog } from './ui.js';
 
 const SPLIT_DAYS = {
   'Full body': ['A'],
@@ -25,12 +25,19 @@ export function createWorkoutBuilder(state, callbacks) {
   const dayExercisesEditor = document.getElementById('day-exercises-editor');
 
   let currentStudentPlans = [];
+  let originalStudentPlans = [];
+  let deletedPlanIds = [];
   let allTemplates = [];
   let activeSplitType = 'ABC';
   let activeDay = 'A';
   let lastSelectedStudentId = '';
   let catalogSearchTerm = '';
   let templatesSearchTerm = '';
+
+  function getSelectedStudentName() {
+    const opt = planStudentSelect?.selectedOptions?.[0];
+    return opt && opt.value ? opt.textContent.trim() : 'Aluno';
+  }
 
   function setUnsavedState(isDirty) {
     state.hasUnsavedPlanChanges = isDirty;
@@ -181,7 +188,7 @@ export function createWorkoutBuilder(state, callbacks) {
     `).join('');
 
     catalogItemsList.querySelectorAll('[data-quick-add]').forEach(btn => {
-      btn.addEventListener('click', () => quickAddExercise(btn.dataset.quickAdd));
+      btn.addEventListener('click', () => stageAddExercise(btn.dataset.quickAdd));
     });
   }
 
@@ -220,7 +227,7 @@ export function createWorkoutBuilder(state, callbacks) {
     `).join('');
 
     templatesListEl.querySelectorAll('[data-apply-tpl]').forEach(btn => {
-      btn.addEventListener('click', () => applyTemplateToStudent(btn.dataset.applyTpl, btn.dataset.split));
+      btn.addEventListener('click', () => stageTemplateToStudent(btn.dataset.applyTpl, btn.dataset.split));
     });
   }
 
@@ -244,53 +251,54 @@ export function createWorkoutBuilder(state, callbacks) {
       return;
     }
 
-    currentStudentPlans = data || [];
+    currentStudentPlans = (data || []).map(item => ({ ...item, isNew: false }));
+    originalStudentPlans = JSON.parse(JSON.stringify(currentStudentPlans));
+    deletedPlanIds = [];
     setUnsavedState(false);
     renderDayTabs();
     renderDayEditor();
   }
 
-  async function quickAddExercise(exerciseId) {
+  // Adiciona o exercício APENAS em memória (só vai para o banco ao clicar em Salvar Ficha)
+  function stageAddExercise(exerciseId) {
     const studentId = planStudentSelect?.value;
     if (!studentId) {
       showToast('Selecione um aluno', 'Escolha o aluno no topo antes de adicionar exercícios.', 'error');
       return;
     }
 
+    const ex = state.allExercises.find(item => String(item.id) === String(exerciseId));
+    if (!ex) return;
+
     const currentLabel = divisionLabelInput?.value.trim() || getActiveDivisionLabel() || null;
-    const { data: inserted, error } = await supabase
-      .from('workout_plans')
-      .insert([{
-        student_id: studentId,
-        exercise_id: exerciseId,
-        division: activeDay,
-        division_label: currentLabel,
-        sets: 3,
-        reps: '10-12',
-        rest_seconds: 60,
-        notes: null
-      }])
-      .select(`
-        id, exercise_id, division, division_label, sets, reps, rest_seconds, notes,
-        exercises ( name, machine_number, muscle_group, equipment_notes )
-      `)
-      .single();
+    const tempId = `temp_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
-    if (error) {
-      showToast('Erro ao Adicionar', error.message, 'error');
-      return;
-    }
+    currentStudentPlans.push({
+      id: tempId,
+      isNew: true,
+      student_id: studentId,
+      exercise_id: ex.id,
+      division: activeDay,
+      division_label: currentLabel,
+      sets: 3,
+      reps: '10-12',
+      rest_seconds: 60,
+      notes: null,
+      exercises: {
+        name: ex.name,
+        machine_number: ex.machine_number,
+        muscle_group: ex.muscle_group,
+        equipment_notes: ex.equipment_notes || null
+      }
+    });
 
-    if (inserted) {
-      currentStudentPlans.push(inserted);
-      renderDayTabs();
-      renderDayEditor();
-      await callbacks.onPlansMutated();
-      showToast('Exercício Adicionado', `Incluído no Treino ${activeDay}.`, 'success');
-    }
+    setUnsavedState(true);
+    renderDayTabs();
+    renderDayEditor();
   }
 
-  async function applyTemplateToStudent(templateId, splitType) {
+  // Importa modelo APENAS em memória até clicar em Salvar Ficha
+  async function stageTemplateToStudent(templateId, splitType) {
     const studentId = planStudentSelect?.value;
     if (!studentId) {
       showToast('Selecione um aluno', 'Escolha o aluno antes de importar um modelo.', 'error');
@@ -300,10 +308,12 @@ export function createWorkoutBuilder(state, callbacks) {
     if (currentStudentPlans.length > 0) {
       const ok = await showConfirmDialog(
         'Substituir Ficha Atual?',
-        'Este aluno já possui exercícios cadastrados. Deseja substituir pela ficha deste modelo?'
+        'Este aluno já possui exercícios. Deseja substituir em memória pelo modelo (será gravado ao clicar em Salvar Ficha)?'
       );
       if (!ok) return;
-      await supabase.from('workout_plans').delete().eq('student_id', studentId);
+      currentStudentPlans.forEach(p => {
+        if (!p.isNew) deletedPlanIds.push(p.id);
+      });
     }
 
     const { data: items, error } = await supabase
@@ -316,31 +326,36 @@ export function createWorkoutBuilder(state, callbacks) {
       return;
     }
 
-    const rows = items.map(it => ({
-      student_id: studentId,
-      exercise_id: it.exercise_id,
-      division: it.division,
-      sets: it.sets,
-      reps: it.reps,
-      rest_seconds: it.rest_seconds || 60,
-      notes: it.notes || null
-    }));
-
-    const { error: insertError } = await supabase.from('workout_plans').insert(rows);
-    if (insertError) {
-      showToast('Erro ao Importar', insertError.message, 'error');
-      return;
-    }
+    currentStudentPlans = items.map((it, idx) => {
+      const ex = state.allExercises.find(e => String(e.id) === String(it.exercise_id));
+      return {
+        id: `temp_tpl_${Date.now()}_${idx}`,
+        isNew: true,
+        student_id: studentId,
+        exercise_id: it.exercise_id,
+        division: it.division,
+        division_label: null,
+        sets: it.sets,
+        reps: it.reps,
+        rest_seconds: it.rest_seconds || 60,
+        notes: it.notes || null,
+        exercises: ex ? {
+          name: ex.name,
+          machine_number: ex.machine_number,
+          muscle_group: ex.muscle_group,
+          equipment_notes: ex.equipment_notes || null
+        } : { name: 'Exercício', machine_number: '—' }
+      };
+    });
 
     activeSplitType = splitType;
     if (planSplitSelect) planSplitSelect.value = splitType;
     activeDay = 'A';
-    await loadStudentPlans(studentId);
-    await callbacks.onPlansMutated();
-    showToast('Modelo Aplicado!', `Ficha ${splitType} importada com sucesso.`, 'success');
+    setUnsavedState(true);
+    renderDayTabs();
+    renderDayEditor();
   }
 
-  // Delegação de eventos nos inputs e botão excluir da ficha (zero spam de toast)
   dayExercisesEditor?.addEventListener('input', (e) => {
     const row = e.target.closest('.plan-edit-row');
     const field = e.target.dataset.field;
@@ -357,58 +372,147 @@ export function createWorkoutBuilder(state, callbacks) {
     setUnsavedState(true);
   });
 
-  dayExercisesEditor?.addEventListener('click', async (e) => {
+  // Remove item APENAS em memória (só deleta do banco ao clicar em Salvar Ficha)
+  dayExercisesEditor?.addEventListener('click', (e) => {
     const delBtn = e.target.closest('[data-delete-item]');
     if (!delBtn) return;
 
-    const itemId = delBtn.dataset.deleteItem;
-    const { error } = await supabase.from('workout_plans').delete().eq('id', itemId);
-    if (error) {
-      showToast('Erro ao Remover', error.message, 'error');
-      return;
+    const itemId = String(delBtn.dataset.deleteItem);
+    const target = currentStudentPlans.find(p => String(p.id) === itemId);
+    if (!target) return;
+
+    if (!target.isNew) {
+      deletedPlanIds.push(target.id);
     }
-    currentStudentPlans = currentStudentPlans.filter(p => String(p.id) !== String(itemId));
+
+    currentStudentPlans = currentStudentPlans.filter(p => String(p.id) !== itemId);
+    setUnsavedState(true);
     renderDayTabs();
     renderDayEditor();
-    await callbacks.onPlansMutated();
   });
 
-  // Botão único de salvar alterações em lote
+  // Salva todas as inserções, atualizações e exclusões no Supabase de uma única vez
   saveWorkoutBatchBtn?.addEventListener('click', async () => {
     const studentId = planStudentSelect?.value;
-    if (!studentId || !currentStudentPlans.length) {
-      showToast('Nada para salvar', 'Selecione um aluno com exercícios cadastrados.', 'error');
+    if (!studentId) {
+      showToast('Selecione um aluno', 'Escolha o aluno antes de salvar a ficha.', 'error');
       return;
     }
 
     saveWorkoutBatchBtn.disabled = true;
     saveWorkoutBatchBtn.textContent = 'Salvando...';
 
-    const updates = currentStudentPlans.map(item =>
-      supabase
-        .from('workout_plans')
-        .update({
+    const studentName = getSelectedStudentName();
+    const logsToRecord = [];
+
+    try {
+      // 1. Registra no log itens removidos e executa DELETE em lote
+      if (deletedPlanIds.length > 0) {
+        deletedPlanIds.forEach(delId => {
+          const oldItem = originalStudentPlans.find(o => String(o.id) === String(delId));
+          const ex = Array.isArray(oldItem?.exercises) ? oldItem.exercises[0] : oldItem?.exercises;
+          if (oldItem) {
+            logsToRecord.push({
+              where: `Ficha: ${studentName} (Treino ${oldItem.division})`,
+              what: `Exercício removido: ${ex?.name || 'Aparelho'}`,
+              before: `${oldItem.sets}x${oldItem.reps}`,
+              after: 'Removido'
+            });
+          }
+        });
+
+        const { error: delErr } = await supabase
+          .from('workout_plans')
+          .delete()
+          .in('id', deletedPlanIds);
+        if (delErr) throw delErr;
+      }
+
+      // 2. Insere novos exercícios adicionados na sessão
+      const newItems = currentStudentPlans.filter(p => p.isNew);
+      if (newItems.length > 0) {
+        const insertPayload = newItems.map(item => ({
+          student_id: studentId,
+          exercise_id: item.exercise_id,
+          division: item.division,
+          division_label: item.division_label || null,
           sets: item.sets,
           reps: item.reps,
           rest_seconds: item.rest_seconds,
-          notes: item.notes,
-          division_label: item.division_label || null
-        })
-        .eq('id', item.id)
-    );
+          notes: item.notes
+        }));
 
-    const results = await Promise.all(updates);
-    const firstErr = results.find(r => r.error)?.error;
+        const { error: insErr } = await supabase
+          .from('workout_plans')
+          .insert(insertPayload);
+        if (insErr) throw insErr;
 
-    if (firstErr) {
+        newItems.forEach(item => {
+          const ex = Array.isArray(item.exercises) ? item.exercises[0] : item.exercises;
+          logsToRecord.push({
+            where: `Ficha: ${studentName} (Treino ${item.division})`,
+            what: `Novo exercício: ${ex?.name || 'Aparelho'}`,
+            before: 'Não constava',
+            after: `${item.sets}x${item.reps} (${item.rest_seconds}s)`
+          });
+        });
+      }
+
+      // 3. Atualiza exercícios já existentes que sofreram alteração
+      const existingItems = currentStudentPlans.filter(p => !p.isNew);
+      const updatePromises = [];
+
+      existingItems.forEach(item => {
+        const orig = originalStudentPlans.find(o => String(o.id) === String(item.id));
+        const ex = Array.isArray(item.exercises) ? item.exercises[0] : item.exercises;
+
+        if (orig) {
+          const changedFields = [];
+          if (orig.sets !== item.sets) changedFields.push(`Séries: ${orig.sets} → ${item.sets}`);
+          if (orig.reps !== item.reps) changedFields.push(`Reps: ${orig.reps} → ${item.reps}`);
+          if (orig.rest_seconds !== item.rest_seconds) changedFields.push(`Descanso: ${orig.rest_seconds}s → ${item.rest_seconds}s`);
+          if ((orig.notes || '') !== (item.notes || '')) changedFields.push(`Obs: "${orig.notes || '—'}" → "${item.notes || '—'}"`);
+          if ((orig.division_label || '') !== (item.division_label || '')) changedFields.push(`Grupamento: "${orig.division_label || '—'}" → "${item.division_label || '—'}"`);
+
+          if (changedFields.length > 0) {
+            logsToRecord.push({
+              where: `Ficha: ${studentName} (Treino ${item.division})`,
+              what: `Editado: ${ex?.name || 'Exercício'}`,
+              before: `${orig.sets}x${orig.reps} (${orig.rest_seconds}s)`,
+              after: `${item.sets}x${item.reps} (${item.rest_seconds}s)`
+            });
+          }
+        }
+
+        updatePromises.push(
+          supabase
+            .from('workout_plans')
+            .update({
+              sets: item.sets,
+              reps: item.reps,
+              rest_seconds: item.rest_seconds,
+              notes: item.notes,
+              division_label: item.division_label || null
+            })
+            .eq('id', item.id)
+        );
+      });
+
+      if (updatePromises.length > 0) {
+        const results = await Promise.all(updatePromises);
+        const updErr = results.find(r => r.error)?.error;
+        if (updErr) throw updErr;
+      }
+
+      logsToRecord.forEach(entry => recordAuditLog(entry));
+      await loadStudentPlans(studentId);
+      await callbacks.onPlansMutated();
+      showToast('Ficha Salva!', 'Todas as alterações foram gravadas no banco.', 'success');
+    } catch (err) {
       saveWorkoutBatchBtn.disabled = false;
       saveWorkoutBatchBtn.textContent = 'Salvar Ficha *';
-      showToast('Erro ao Salvar', firstErr.message, 'error');
-      return;
+      showToast('Erro ao Salvar', err?.message || 'Falha ao gravar alterações.', 'error');
     }
-
-    setUnsavedState(false);
-    showToast('Ficha Salva!', 'Todas as alterações foram gravadas no banco.', 'success');
   });
 
   divisionLabelInput?.addEventListener('input', () => {
@@ -456,6 +560,8 @@ export function createWorkoutBuilder(state, callbacks) {
 
     if (!newId) {
       currentStudentPlans = [];
+      originalStudentPlans = [];
+      deletedPlanIds = [];
       renderDayTabs();
       renderDayEditor();
       return;
@@ -504,6 +610,13 @@ export function createWorkoutBuilder(state, callbacks) {
       }))
     );
 
+    recordAuditLog({
+      where: 'Biblioteca de Modelos',
+      what: `Novo modelo padrão criado (${activeSplitType})`,
+      before: 'Não existia',
+      after: templateName.trim()
+    });
+
     showToast('Modelo Salvo!', 'Novo modelo adicionado à biblioteca.', 'success');
     await loadTemplates();
   });
@@ -542,6 +655,8 @@ export function createWorkoutBuilder(state, callbacks) {
         planStudentSelect.value = '';
         lastSelectedStudentId = '';
         currentStudentPlans = [];
+        originalStudentPlans = [];
+        deletedPlanIds = [];
         setUnsavedState(false);
         renderDayTabs();
         renderDayEditor();

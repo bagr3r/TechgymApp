@@ -11,17 +11,10 @@
 <body style="visibility: hidden;">
   <div id="toast-container" class="toast-container" aria-live="polite"></div>
 
-  <header class="topbar">
+ <header class="topbar">
     <div class="topbar-inner">
       <div class="brand-box">
         <div class="brand-svg-logo">
-          <div class="brand-svg-icon" aria-hidden="true">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-              <path d="M3 5H21V8.5H13.8V19H10.2V8.5H3V5Z" fill="#D6242A"/>
-              <rect x="3" y="16" width="5" height="3" rx="1" fill="#FFFFFF"/>
-              <rect x="16" y="16" width="5" height="3" rx="1" fill="#FFFFFF"/>
-            </svg>
-          </div>
           <div class="brand-svg-text">
             <strong>TECH<span>GYM</span></strong>
             <small>Academia</small>
@@ -31,11 +24,25 @@
       </div>
 
       <div class="topbar-actions">
+        <button type="button" id="audit-log-toggle" class="btn-outline audit-log-btn" title="Ver histórico de alterações">
+          <span>Histórico</span>
+          <span id="audit-log-count" class="audit-count-pill">0</span>
+        </button>
+
+        <div id="audit-log-popover" class="audit-popover" style="display: none;">
+          <div class="audit-popover-header">
+            <strong>Alterações Recentes</strong>
+            <button type="button" id="audit-log-clear" class="btn-sm btn-outline" style="height:26px; font-size:0.72rem;">Limpar</button>
+          </div>
+          <div id="audit-log-list" class="audit-popover-list">
+            <div class="empty-state" style="padding: 18px 10px;">Nenhuma alteração registrada nesta sessão.</div>
+          </div>
+        </div>
+
         <button type="button" id="logout-btn" class="btn-outline">Sair</button>
       </div>
     </div>
   </header>
-
   <div class="dashboard-shell">
     <!-- Menu Flutuante -->
     <aside class="nav-card">

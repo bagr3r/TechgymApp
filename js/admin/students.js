@@ -1,7 +1,7 @@
 import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from '../config.js';
 import { normalizeUsernameToEmail, normalizeCpfPassword } from '../auth.js';
 import {
-  escapeHtml, showToast, showConfirmDialog,
+  escapeHtml, showToast, showConfirmDialog, recordAuditLog,
   setFieldError, clearFormErrors, formatCpfMask, isValidCPF, sanitizeUsername
 } from './ui.js';
 
@@ -139,6 +139,13 @@ export function createStudentsManager(state, callbacks) {
         return;
       }
 
+      recordAuditLog({
+        where: 'Gestão de Alunos',
+        what: `Aluno excluído: ${st.full_name}`,
+        before: `${st.full_name} (${st.plan_type || 'Mensal'})`,
+        after: 'Removido'
+      });
+
       callbacks.onStudentDeleted(st.id);
       showToast('Aluno Excluído', `${st.full_name} foi removido do sistema.`, 'success');
       await loadStudents();
@@ -224,6 +231,13 @@ export function createStudentsManager(state, callbacks) {
       }]);
     }
 
+    recordAuditLog({
+      where: 'Gestão de Alunos',
+      what: `Novo aluno matriculado`,
+      before: 'Não cadastrado',
+      after: `${fullName} (@${rawUsername} • ${planType})`
+    });
+
     if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Cadastrar Aluno'; }
     studentForm.reset();
     showToast('Aluno Cadastrado!', `${fullName} (${planType}) cadastrado.`, 'success');
@@ -238,6 +252,7 @@ export function createStudentsManager(state, callbacks) {
     ]);
 
     const id = document.getElementById('edit-student-id').value;
+    const prevStudent = state.allStudents.find(s => s.id === id);
     const fullName = document.getElementById('edit-student-name').value.trim();
     const username = sanitizeUsername(document.getElementById('edit-student-username').value);
     const planType = document.getElementById('edit-student-plan')?.value || 'Mensal';
@@ -264,6 +279,15 @@ export function createStudentsManager(state, callbacks) {
     if (error) {
       showToast('Erro ao Atualizar', error.message, 'error');
       return;
+    }
+
+    if (prevStudent) {
+      recordAuditLog({
+        where: 'Gestão de Alunos',
+        what: `Dados do aluno editados`,
+        before: `${prevStudent.full_name} (@${prevStudent.username || '—'} • ${prevStudent.plan_type || 'Mensal'})`,
+        after: `${fullName} (@${username} • ${planType})`
+      });
     }
 
     window.closeStudentModal();

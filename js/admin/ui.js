@@ -129,3 +129,65 @@ export function isValidYoutubeUrl(url) {
     return false;
   }
 }
+
+const sessionAuditLogs = [];
+
+export function initAuditLogUI() {
+  const toggleBtn = document.getElementById('audit-log-toggle');
+  const popover = document.getElementById('audit-log-popover');
+  const clearBtn = document.getElementById('audit-log-clear');
+
+  toggleBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (!popover) return;
+    popover.style.display = popover.style.display === 'none' ? 'block' : 'none';
+  });
+
+  clearBtn?.addEventListener('click', () => {
+    sessionAuditLogs.length = 0;
+    renderAuditLogs();
+  });
+
+  document.addEventListener('click', (e) => {
+    if (popover && popover.style.display === 'block' && !popover.contains(e.target) && e.target !== toggleBtn) {
+      popover.style.display = 'none';
+    }
+  });
+}
+
+export function recordAuditLog({ where, what, before, after }) {
+  const now = new Date();
+  const time = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+  sessionAuditLogs.unshift({ where, what, before, after, time });
+  if (sessionAuditLogs.length > 30) sessionAuditLogs.pop();
+
+  renderAuditLogs();
+}
+
+function renderAuditLogs() {
+  const countEl = document.getElementById('audit-log-count');
+  const listEl = document.getElementById('audit-log-list');
+  if (countEl) countEl.textContent = String(sessionAuditLogs.length);
+  if (!listEl) return;
+
+  if (!sessionAuditLogs.length) {
+    listEl.innerHTML = '<div class="empty-state" style="padding: 18px 10px;">Nenhuma alteração registrada nesta sessão.</div>';
+    return;
+  }
+
+  listEl.innerHTML = sessionAuditLogs.map(entry => `
+    <div class="audit-entry">
+      <div class="audit-entry-top">
+        <span class="audit-entry-where">${escapeHtml(entry.where)}</span>
+        <span class="audit-entry-time">${escapeHtml(entry.time)}</span>
+      </div>
+      <div class="audit-entry-what">${escapeHtml(entry.what)}</div>
+      <div class="audit-diff-row">
+        <span class="audit-before">${escapeHtml(entry.before || 'Vazio')}</span>
+        <span>→</span>
+        <span class="audit-after">${escapeHtml(entry.after || 'Removido')}</span>
+      </div>
+    </div>
+  `).join('');
+}

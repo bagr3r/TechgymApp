@@ -1,6 +1,6 @@
 import { supabase } from '../config.js';
 import {
-  escapeHtml, showToast, showConfirmDialog,
+  escapeHtml, showToast, showConfirmDialog, recordAuditLog,
   setFieldError, clearFieldError, clearFormErrors, isValidYoutubeUrl
 } from './ui.js';
 
@@ -195,6 +195,14 @@ export function createExercisesManager(state, callbacks) {
         showToast('Erro ao Excluir', error.message, 'error');
         return;
       }
+
+      recordAuditLog({
+        where: `Aparelhos (${ex.muscle_group})`,
+        what: `Aparelho excluído`,
+        before: `#${ex.machine_number} — ${ex.name}`,
+        after: 'Removido'
+      });
+
       showToast('Aparelho Removido', `${ex.name} excluído.`, 'success');
       await loadExercises();
     }
@@ -262,6 +270,13 @@ export function createExercisesManager(state, callbacks) {
     if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Salvar Aparelho / Exercício'; }
     if (error) { showToast('Erro ao Salvar', error.message, 'error'); return; }
 
+    recordAuditLog({
+      where: `Aparelhos (${muscleGroup})`,
+      what: `Novo aparelho cadastrado`,
+      before: 'Não existia',
+      after: `#${machineNumber} — ${name}${equipmentNotes ? ` (Req: ${equipmentNotes})` : ''}`
+    });
+
     exerciseForm.reset();
     if (accessoryWrapper) accessoryWrapper.style.display = 'none';
     showToast('Aparelho Cadastrado!', `Máq. #${machineNumber} — ${name} salvo.`, 'success');
@@ -278,6 +293,7 @@ export function createExercisesManager(state, callbacks) {
     ]);
 
     const id = document.getElementById('edit-exercise-id').value;
+    const prevEx = state.allExercises.find(item => String(item.id) === String(id));
     const machineNumber = document.getElementById('edit-exercise-machine').value.trim().toUpperCase();
     const name = document.getElementById('edit-exercise-name').value.trim();
     const muscleGroup = document.getElementById('edit-exercise-muscle').value;
@@ -304,6 +320,15 @@ export function createExercisesManager(state, callbacks) {
       .eq('id', id);
 
     if (error) { showToast('Erro ao Atualizar', error.message, 'error'); return; }
+
+    if (prevEx) {
+      recordAuditLog({
+        where: `Aparelhos (${muscleGroup})`,
+        what: `Aparelho editado`,
+        before: `#${prevEx.machine_number} — ${prevEx.name}${prevEx.equipment_notes ? ` (${prevEx.equipment_notes})` : ''}`,
+        after: `#${machineNumber} — ${name}${equipmentNotes ? ` (${equipmentNotes})` : ''}`
+      });
+    }
 
     window.closeExerciseModal();
     showToast('Aparelho Atualizado!', 'Alterações salvas.', 'success');
