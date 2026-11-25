@@ -884,3 +884,263 @@ tbody tr:hover {
   height: 36px;
   font-size: 0.82rem;
 }
+
+/* ==========================================================================
+   BARRA DE ABAS DOS TREINOS + BOTÃO SALVAR FICHA EM LOTE
+   ========================================================================== */
+.day-tabs-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.day-tabs-header .day-tabs-bar {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+  flex: 1;
+}
+
+.save-plan-batch-btn {
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.save-plan-batch-btn.has-changes {
+  background-color: var(--red-techgym);
+  color: #FFFFFF;
+  border-color: var(--red-techgym);
+  box-shadow: 0 4px 12px rgba(214, 36, 42, 0.28);
+}
+
+.save-plan-batch-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ==========================================================================
+   RESPONSIVIDADE MOBILE COMPLETA — PAINEL ADMIN (TABLET E SMARTPHONE)
+   ========================================================================== */
+@media (max-width: 960px) {
+  .dashboard-shell {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 16px;
+  }
+
+  /* Menu flutuante vira barra horizontal deslizável no topo */
+  .nav-card {
+    position: static;
+    padding: 12px;
+    border-radius: 16px;
+  }
+
+  .nav-section-title {
+    display: none;
+  }
+
+  .nav-buttons {
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 8px;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .nav-buttons::-webkit-scrollbar {
+    display: none;
+  }
+
+  .side-btn {
+    flex: 0 0 auto;
+    min-width: 148px;
+    padding: 10px 12px;
+  }
+
+  .side-btn-text small {
+    display: none;
+  }
+
+  /* Aba 02: Construtor de Fichas empilhado */
+  .plan-context-bar {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .plan-context-bar button {
+    width: 100%;
+  }
+
+  .workout-builder-v2 {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .library-box {
+    position: static;
+  }
+
+  /* Formulários de 4 colunas viram 2 colunas no tablet */
+  .builder-grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+}
+
+@media (max-width: 640px) {
+  .topbar {
+    padding: 10px 14px;
+  }
+
+  .brand-svg-icon {
+    width: 34px;
+    height: 34px;
+  }
+
+  .brand-svg-text strong {
+    font-size: 1.15rem;
+  }
+
+  .env-badge {
+    display: none;
+  }
+
+  .content-card {
+    padding: 18px 14px;
+    border-radius: 16px;
+  }
+
+  .content-header h2 {
+    font-size: 1.32rem;
+  }
+
+  /* Formulários em coluna única no celular */
+  .builder-grid-4 {
+    grid-template-columns: 1fr;
+  }
+
+  .builder-footer button {
+    width: 100%;
+  }
+
+  /* Barra de busca e título das tabelas empilhados */
+  .table-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .table-toolbar input[type="search"] {
+    width: 100%;
+    max-width: none;
+  }
+
+  /* Tabelas com rolagem lateral suave e botões compactos */
+  .table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .table-wrapper table {
+    min-width: 540px;
+  }
+
+  .actions-cell {
+    white-space: nowrap;
+  }
+
+  /* Linha de edição de exercício na Aba 02 organizada em grade 2x2 */
+  .day-tabs-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .day-tabs-bar {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 4px;
+  }
+
+  .day-tab {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .save-plan-batch-btn {
+    width: 100%;
+    height: 40px;
+  }
+
+  .division-label-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .division-label-bar input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .plan-edit-row {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    padding: 14px 12px;
+    position: relative;
+  }
+
+  /* Nome do aparelho ocupa a linha inteira no topo do card */
+  .plan-edit-row .ex-name-col {
+    grid-column: 1 / -1;
+    padding-right: 36px;
+  }
+
+  /* Campo de observação ocupa a linha inteira na base */
+  .plan-edit-row > div:nth-child(5) {
+    grid-column: 1 / -1;
+  }
+
+  /* Botão remover (X) fixado no canto superior direito do card */
+  .plan-edit-row > button.btn-danger {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+  }
+
+  /* Modais e notificações toast ajustados para tela estreita */
+  .admin-modal-card {
+    width: calc(100% - 24px);
+    padding: 18px 16px;
+    margin: 12px;
+  }
+
+  .admin-modal-actions {
+    flex-direction: column-reverse;
+  }
+
+  .admin-modal-actions button {
+    width: 100%;
+  }
+
+  .toast-container {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    top: auto;
+    max-width: none;
+  }
+
+  .techgym-toast {
+    width: 100%;
+  }
+}

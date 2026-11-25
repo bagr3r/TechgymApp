@@ -9,6 +9,8 @@ let allTemplates = [];
 let currentStudentPlans = [];
 let activeSplitType = 'ABC';
 let activeDay = 'A';
+let hasUnsavedPlanChanges = false;
+let lastSelectedStudentId = '';
 let catalogSearchTerm = '';
 let templatesSearchTerm = '';
 let studentsTableSearch = '';
@@ -21,6 +23,7 @@ const logoutBtn = document.getElementById('logout-btn');
 const planStudentSelect = document.getElementById('plan-student');
 const planSplitSelect = document.getElementById('plan-split-type');
 const saveTemplateBtn = document.getElementById('save-as-template-btn');
+const saveWorkoutBatchBtn = document.getElementById('save-workout-batch-btn');
 
 const catalogSearchInput = document.getElementById('catalog-search');
 const catalogItemsList = document.getElementById('catalog-items-list');
@@ -72,13 +75,71 @@ const AVAILABLE_PLANS = [
 if (logoutBtn) {
   logoutBtn.addEventListener('click', async (e) => {
     e.preventDefault();
+    if (hasUnsavedPlanChanges) {
+      const leave = await showConfirmDialog(
+        'Alterações Não Salvas',
+        'Você modificou a ficha de treino e ainda não salvou. Deseja sair mesmo assim e descartar as alterações?'
+      );
+      if (!leave) return;
+    }
+    hasUnsavedPlanChanges = false;
     await logout();
   });
 }
 
 // ==========================================================================
-// 0. NOTIFICAÇÕES TOAST, CONFIRMAÇÃO E VALIDAÇÃO INLINE
+// 0. NOTIFICAÇÕES TOAST, CONFIRMAÇÃO E BLOQUEIO DE ALTERAÇÕES NÃO SALVAS
 // ==========================================================================
+function setUnsavedPlanState(isDirty) {
+  hasUnsavedPlanChanges = isDirty;
+  if (!saveWorkoutBatchBtn) return;
+
+  if (isDirty) {
+    saveWorkoutBatchBtn.disabled = false;
+    saveWorkoutBatchBtn.classList.add('has-changes');
+    saveWorkoutBatchBtn.textContent = 'Salvar Ficha *';
+  } else {
+    saveWorkoutBatchBtn.disabled = true;
+    saveWorkoutBatchBtn.classList.remove('has-changes');
+    saveWorkoutBatchBtn.textContent = 'Ficha Salva ✓';
+  }
+}
+
+window.addEventListener('beforeunload', (e) => {
+  if (hasUnsavedPlanChanges) {
+    e.preventDefault();
+    e.returnValue = '';
+  }
+});
+
+async function switchAdminTab(targetTabId) {
+  const currentActiveBtn = document.querySelector('.side-btn.active');
+  const currentTabId = currentActiveBtn?.dataset.tab;
+
+  if (currentTabId === targetTabId) return;
+
+  if (currentTabId === 'tab-fichas' && hasUnsavedPlanChanges) {
+    const discard = await showConfirmDialog(
+      'Ficha Não Salva!',
+      'Você fez alterações nesta ficha de treino e ainda não clicou em "Salvar Ficha". Deseja descartar as alterações e sair desta aba?'
+    );
+    if (!discard) return;
+    setUnsavedPlanState(false);
+    if (planStudentSelect?.value) {
+      await loadStudentPlans(planStudentSelect.value);
+    }
+  }
+
+  document.querySelectorAll('.side-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelector(`.side-btn[data-tab="${targetTabId}"]`)?.classList.add('active');
+  document.getElementById(targetTabId)?.classList.add('active');
+}
+
+document.querySelectorAll('.side-btn').forEach(btn => {
+  btn.addEventListener('click', () => switchAdminTab(btn.dataset.tab));
+});
+
 function showToast(title, message, type = 'success') {
   if (!toastContainer) return;
   const toast = document.createElement('div');
@@ -95,7 +156,7 @@ function showToast(title, message, type = 'success') {
     toast.style.transform = 'translateX(20px)';
     toast.style.transition = 'all 0.2s ease';
     setTimeout(() => toast.remove(), 220);
-  }, 4200);
+  }, 4000);
 }
 
 function showConfirmDialog(title, text) {
@@ -163,7 +224,6 @@ function clearFormErrors(pairs) {
   document.getElementById(inputId)?.addEventListener('input', () => clearFieldError(inputId, errId));
 });
 
-// Toggle do Checkbox de Acessório (Cadastro e Edição)
 if (needsAccessoryCheckbox && accessoryWrapper) {
   needsAccessoryCheckbox.addEventListener('change', () => {
     accessoryWrapper.style.display = needsAccessoryCheckbox.checked ? 'flex' : 'none';
@@ -353,7 +413,7 @@ async function refreshDashboardMetrics() {
 }
 
 // ==========================================================================
-// 3. ABA 02 — CONSTRUTOR DE FICHAS (COM FOCO / GRUPAMENTO POR DIA)
+// 3. ABA 02 — CONSTRUTOR DE FICHAS (EDIÇÃO EM LOTE + SALVAMENTO ÚNICO)
 // ==========================================================================
 function renderCatalogList() {
   if (!catalogItemsList) return;
@@ -401,9 +461,9 @@ if (catalogSearchInput) {
   });
 }
 
-window.quickCreateAndAddExercise = () => {
+window.quickCreateAndAddExercise = async () => {
   const name = catalogSearchTerm.trim();
-  document.querySelector('.side-btn[data-tab="tab-aparelhos"]')?.click();
+  await switchAdminTab('tab-aparelhos');
   const nameInput = document.getElementById('exercise-name');
   const machineInput = document.getElementById('exercise-machine');
   if (nameInput) nameInput.value = name;
@@ -524,6 +584,11 @@ if (saveTemplateBtn) {
       return;
     }
 
+    if (hasUnsavedPlanChanges) {
+      showToast('Salve a ficha primeiro', 'Clique em "Salvar Ficha *" antes de exportar como modelo padrão.', 'error');
+      return;
+    }
+
     const templateName = prompt(`Nome do novo modelo (${activeSplitType}):`, `Treino ${activeSplitType} Personalizado`);
     if (!templateName || !templateName.trim()) return;
 
@@ -578,34 +643,13 @@ function syncDivisionLabelBar() {
   divisionLabelInput.value = getActiveDivisionLabel();
 }
 
-// Salva o nome/grupamento do dia ativo (ex: "Peito e Tríceps") em todos os itens daquele dia
 if (divisionLabelInput) {
-  divisionLabelInput.addEventListener('change', async () => {
-    const studentId = planStudentSelect?.value;
-    if (!studentId) return;
-
+  divisionLabelInput.addEventListener('input', () => {
     const newLabel = divisionLabelInput.value.trim() || null;
     const dayItems = currentStudentPlans.filter(p => p.division === activeDay);
-
-    if (!dayItems.length) {
-      showToast('Adicione um exercício', 'Inclua ao menos 1 exercício neste treino para salvar o nome do grupamento.', 'error');
-      return;
-    }
-
-    const { error } = await supabase
-      .from('workout_plans')
-      .update({ division_label: newLabel })
-      .eq('student_id', studentId)
-      .eq('division', activeDay);
-
-    if (error) {
-      showToast('Erro ao salvar grupamento', error.message, 'error');
-      return;
-    }
-
     dayItems.forEach(item => { item.division_label = newLabel; });
     renderDayTabs();
-    showToast('Grupamento Salvo!', `Treino ${activeDay} definido como "${newLabel || 'Padrão'}".`, 'success');
+    setUnsavedPlanState(true);
   });
 }
 
@@ -651,16 +695,33 @@ if (planSplitSelect) {
 
 if (planStudentSelect) {
   planStudentSelect.addEventListener('change', async () => {
-    const studentId = planStudentSelect.value;
-    if (!studentId) {
+    const newStudentId = planStudentSelect.value;
+
+    if (hasUnsavedPlanChanges) {
+      const discard = await showConfirmDialog(
+        'Alterações Não Salvas',
+        'Você modificou a ficha deste aluno e ainda não salvou. Deseja trocar de aluno e descartar as alterações?'
+      );
+      if (!discard) {
+        planStudentSelect.value = lastSelectedStudentId;
+        return;
+      }
+    }
+
+    lastSelectedStudentId = newStudentId;
+    setUnsavedPlanState(false);
+
+    if (!newStudentId) {
       currentStudentPlans = [];
       renderDayTabs();
+      if (saveWorkoutBatchBtn) saveWorkoutBatchBtn.textContent = 'Salvar Ficha';
       if (dayExercisesEditor) {
         dayExercisesEditor.innerHTML = '<div class="empty-state">Selecione um aluno acima para começar a montar a ficha.</div>';
       }
       return;
     }
-    await loadStudentPlans(studentId);
+
+    await loadStudentPlans(newStudentId);
   });
 }
 
@@ -697,6 +758,7 @@ async function loadStudentPlans(studentId) {
   }
 
   currentStudentPlans = data || [];
+  setUnsavedPlanState(false);
   renderDayTabs();
   renderDayEditor();
 }
@@ -734,25 +796,25 @@ function renderDayEditor() {
         <div>
           <span class="inline-field-label">Séries</span>
           <input type="number" min="1" max="20" value="${item.sets}"
-                 onchange="updatePlanRow('${item.id}', 'sets', Math.max(1, parseInt(this.value, 10) || 3))">
+                 oninput="stagePlanChange('${item.id}', 'sets', Math.max(1, parseInt(this.value, 10) || 1))">
         </div>
 
         <div>
           <span class="inline-field-label">Reps</span>
           <input type="text" value="${escapeHtml(item.reps)}"
-                 onchange="updatePlanRow('${item.id}', 'reps', this.value.trim() || '12')">
+                 oninput="stagePlanChange('${item.id}', 'reps', this.value.trim() || '12')">
         </div>
 
         <div>
           <span class="inline-field-label">Desc (s)</span>
           <input type="number" min="0" max="600" value="${item.rest_seconds || 60}"
-                 onchange="updatePlanRow('${item.id}', 'rest_seconds', Math.max(0, parseInt(this.value, 10) || 60))">
+                 oninput="stagePlanChange('${item.id}', 'rest_seconds', Math.max(0, parseInt(this.value, 10) || 0))">
         </div>
 
         <div>
           <span class="inline-field-label left">Observação</span>
           <input type="text" class="notes-input" placeholder="Opcional..." value="${escapeHtml(item.notes || '')}"
-                 onchange="updatePlanRow('${item.id}', 'notes', this.value.trim() || null)">
+                 oninput="stagePlanChange('${item.id}', 'notes', this.value.trim() || null)">
         </div>
 
         <button type="button" class="btn-danger btn-sm" onclick="deleteWorkoutItem('${item.id}')" title="Remover">
@@ -761,6 +823,56 @@ function renderDayEditor() {
       </div>
     `;
   }).join('');
+}
+
+window.stagePlanChange = (itemId, field, value) => {
+  const target = currentStudentPlans.find(p => p.id === itemId);
+  if (target) {
+    target[field] = value;
+    setUnsavedPlanState(true);
+  }
+};
+
+if (saveWorkoutBatchBtn) {
+  saveWorkoutBatchBtn.addEventListener('click', async () => {
+    const studentId = planStudentSelect?.value;
+    if (!studentId || !currentStudentPlans.length) return;
+
+    saveWorkoutBatchBtn.disabled = true;
+    saveWorkoutBatchBtn.textContent = 'Salvando...';
+
+    try {
+      const updates = currentStudentPlans.map(item =>
+        supabase
+          .from('workout_plans')
+          .update({
+            sets: item.sets,
+            reps: item.reps,
+            rest_seconds: item.rest_seconds,
+            notes: item.notes,
+            division_label: item.division_label || null
+          })
+          .eq('id', item.id)
+      );
+
+      const results = await Promise.all(updates);
+      const firstErr = results.find(r => r.error)?.error;
+
+      if (firstErr) {
+        saveWorkoutBatchBtn.disabled = false;
+        saveWorkoutBatchBtn.textContent = 'Salvar Ficha *';
+        showToast('Erro ao Salvar', firstErr.message, 'error');
+        return;
+      }
+
+      setUnsavedPlanState(false);
+      showToast('Ficha Salva!', 'Todas as alterações de todos os treinos foram salvas.', 'success');
+    } catch {
+      saveWorkoutBatchBtn.disabled = false;
+      saveWorkoutBatchBtn.textContent = 'Salvar Ficha *';
+      showToast('Erro ao Salvar', 'Falha de conexão ao salvar a ficha.', 'error');
+    }
+  });
 }
 
 window.quickAddExercise = async (exerciseId) => {
@@ -772,41 +884,48 @@ window.quickAddExercise = async (exerciseId) => {
 
   const currentLabel = divisionLabelInput?.value.trim() || getActiveDivisionLabel() || null;
 
-  const { error } = await supabase.from('workout_plans').insert([{
-    student_id: studentId,
-    exercise_id: exerciseId,
-    division: activeDay,
-    division_label: currentLabel,
-    sets: 3,
-    reps: '10-12',
-    rest_seconds: 60,
-    notes: null
-  }]);
+  const { data: inserted, error } = await supabase
+    .from('workout_plans')
+    .insert([{
+      student_id: studentId,
+      exercise_id: exerciseId,
+      division: activeDay,
+      division_label: currentLabel,
+      sets: 3,
+      reps: '10-12',
+      rest_seconds: 60,
+      notes: null
+    }])
+    .select(`
+      id,
+      exercise_id,
+      division,
+      division_label,
+      sets,
+      reps,
+      rest_seconds,
+      notes,
+      exercises (
+        name,
+        machine_number,
+        muscle_group,
+        equipment_notes
+      )
+    `)
+    .single();
 
   if (error) {
     showToast('Erro ao Adicionar', error.message, 'error');
     return;
   }
 
-  await loadStudentPlans(studentId);
-  await refreshDashboardMetrics();
-  showToast('Exercício Adicionado', `Incluído no Treino ${activeDay}.`, 'success');
-};
-
-window.updatePlanRow = async (itemId, field, value) => {
-  const { error } = await supabase
-    .from('workout_plans')
-    .update({ [field]: value })
-    .eq('id', itemId);
-
-  if (error) {
-    showToast('Erro ao Atualizar', error.message, 'error');
-    return;
+  if (inserted) {
+    currentStudentPlans.push(inserted);
+    renderDayTabs();
+    renderDayEditor();
+    await refreshDashboardMetrics();
+    showToast('Exercício Adicionado', `Incluído no Treino ${activeDay}.`, 'success');
   }
-
-  const target = currentStudentPlans.find(p => p.id === itemId);
-  if (target) target[field] = value;
-  showToast('Salvo', 'Alteração atualizada na ficha.', 'success');
 };
 
 window.deleteWorkoutItem = async (itemId) => {
@@ -815,10 +934,10 @@ window.deleteWorkoutItem = async (itemId) => {
     showToast('Erro ao Remover', error.message, 'error');
     return;
   }
-  if (planStudentSelect?.value) {
-    await loadStudentPlans(planStudentSelect.value);
-    await refreshDashboardMetrics();
-  }
+  currentStudentPlans = currentStudentPlans.filter(p => p.id !== itemId);
+  renderDayTabs();
+  renderDayEditor();
+  await refreshDashboardMetrics();
 };
 
 // ==========================================================================
@@ -912,8 +1031,11 @@ if (studentsSearchInput) {
 }
 
 window.openStudentWorkout = async (studentId) => {
-  document.querySelector('.side-btn[data-tab="tab-fichas"]')?.click();
-  if (planStudentSelect) planStudentSelect.value = studentId;
+  await switchAdminTab('tab-fichas');
+  if (planStudentSelect) {
+    planStudentSelect.value = studentId;
+    lastSelectedStudentId = studentId;
+  }
   await loadStudentPlans(studentId);
 };
 
@@ -1089,7 +1211,9 @@ window.deleteStudent = async (studentId, studentName) => {
 
   if (planStudentSelect?.value === studentId) {
     planStudentSelect.value = '';
+    lastSelectedStudentId = '';
     currentStudentPlans = [];
+    setUnsavedPlanState(false);
     renderDayTabs();
     renderDayEditor();
   }
@@ -1226,7 +1350,6 @@ function renderGroupedExercises() {
 window.filterMuscleGroup = (category, value) => {
   perGroupSearchTerms[category] = value;
   renderGroupedExercises();
-  // Mantém o foco no input daquele grupo após re-renderizar
   const inputs = document.querySelectorAll('.muscle-group-search-bar input');
   inputs.forEach(inp => {
     if (inp.placeholder.includes(`em ${category} `)) {
@@ -1440,5 +1563,6 @@ function escapeHtml(str) {
   renderDayTabs();
   const auth = await checkAuth('admin');
   if (!auth) return;
+  document.body.style.visibility = 'visible';
   await Promise.all([loadExercises(), loadStudents(), loadTemplates()]);
 })();
