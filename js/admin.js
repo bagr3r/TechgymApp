@@ -13,6 +13,7 @@ let catalogSearchTerm = '';
 let templatesSearchTerm = '';
 let studentsTableSearch = '';
 let exercisesTableSearch = '';
+let perGroupSearchTerms = {};
 
 // Elementos
 const toastContainer = document.getElementById('toast-container');
@@ -26,6 +27,9 @@ const catalogItemsList = document.getElementById('catalog-items-list');
 const templatesSearchInput = document.getElementById('templates-search');
 const templatesListEl = document.getElementById('templates-list');
 const dayTabsContainer = document.getElementById('day-tabs-container');
+const divisionLabelBar = document.getElementById('division-label-bar');
+const divisionLabelTitle = document.getElementById('day-division-label-title');
+const divisionLabelInput = document.getElementById('day-division-label');
 const dayExercisesEditor = document.getElementById('day-exercises-editor');
 
 const studentForm = document.getElementById('student-form');
@@ -35,6 +39,9 @@ const studentsSearchInput = document.getElementById('students-search');
 const studentsList = document.getElementById('students-list');
 
 const exerciseForm = document.getElementById('exercise-form');
+const needsAccessoryCheckbox = document.getElementById('exercise-needs-accessory');
+const accessoryWrapper = document.getElementById('exercise-accessory-wrapper');
+const accessoryTextInput = document.getElementById('exercise-accessory-text');
 const exercisesTableSearchInput = document.getElementById('exercises-table-search');
 const exercisesGroupedContainer = document.getElementById('exercises-grouped-container');
 
@@ -42,6 +49,9 @@ const editStudentModal = document.getElementById('edit-student-modal');
 const editStudentForm = document.getElementById('edit-student-form');
 const editExerciseModal = document.getElementById('edit-exercise-modal');
 const editExerciseForm = document.getElementById('edit-exercise-form');
+const editNeedsAccessoryCheckbox = document.getElementById('edit-exercise-needs-accessory');
+const editAccessoryWrapper = document.getElementById('edit-exercise-accessory-wrapper');
+const editAccessoryTextInput = document.getElementById('edit-exercise-accessory-text');
 
 const SPLIT_DAYS = {
   'Full body': ['A'],
@@ -142,17 +152,44 @@ function clearFormErrors(pairs) {
   ['exercise-machine', 'err-exercise-machine'],
   ['exercise-name', 'err-exercise-name'],
   ['exercise-video', 'err-exercise-video'],
+  ['exercise-accessory-text', 'err-exercise-accessory'],
   ['edit-student-name', 'err-edit-student-name'],
   ['edit-student-username', 'err-edit-student-username'],
   ['edit-exercise-machine', 'err-edit-exercise-machine'],
   ['edit-exercise-name', 'err-edit-exercise-name'],
-  ['edit-exercise-video', 'err-edit-exercise-video']
+  ['edit-exercise-video', 'err-edit-exercise-video'],
+  ['edit-exercise-accessory-text', 'err-edit-exercise-accessory']
 ].forEach(([inputId, errId]) => {
   document.getElementById(inputId)?.addEventListener('input', () => clearFieldError(inputId, errId));
 });
 
+// Toggle do Checkbox de Acessório (Cadastro e Edição)
+if (needsAccessoryCheckbox && accessoryWrapper) {
+  needsAccessoryCheckbox.addEventListener('change', () => {
+    accessoryWrapper.style.display = needsAccessoryCheckbox.checked ? 'flex' : 'none';
+    if (needsAccessoryCheckbox.checked) {
+      accessoryTextInput?.focus();
+    } else if (accessoryTextInput) {
+      accessoryTextInput.value = '';
+      clearFieldError('exercise-accessory-text', 'err-exercise-accessory');
+    }
+  });
+}
+
+if (editNeedsAccessoryCheckbox && editAccessoryWrapper) {
+  editNeedsAccessoryCheckbox.addEventListener('change', () => {
+    editAccessoryWrapper.style.display = editNeedsAccessoryCheckbox.checked ? 'flex' : 'none';
+    if (editNeedsAccessoryCheckbox.checked) {
+      editAccessoryTextInput?.focus();
+    } else if (editAccessoryTextInput) {
+      editAccessoryTextInput.value = '';
+      clearFieldError('edit-exercise-accessory-text', 'err-edit-exercise-accessory');
+    }
+  });
+}
+
 // ==========================================================================
-// 1. VALIDADORES (CPF MÓDULO 11, USUÁRIO E YOUTUBE)
+// 1. VALIDADORES
 // ==========================================================================
 function formatCpfMask(value) {
   const digits = value.replace(/\D/g, '').slice(0, 11);
@@ -195,7 +232,14 @@ function sanitizeUsername(raw) {
 
 function isValidYoutubeUrl(url) {
   if (!url) return true;
-  return /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/i.test(url.trim());
+  try {
+    const parsed = new URL(url.trim());
+    const validProtocol = parsed.protocol === 'https:' || parsed.protocol === 'http:';
+    const validHost = /^(www\.)?(youtube\.com|youtu\.be)$/i.test(parsed.hostname);
+    return validProtocol && validHost;
+  } catch {
+    return false;
+  }
 }
 
 if (studentCpfInput) {
@@ -215,14 +259,13 @@ document.getElementById('edit-student-username')?.addEventListener('input', (e) 
 });
 
 // ==========================================================================
-// 2. ABA 01 — DASHBOARD (KPIs, PLANOS E ALUNOS SEM FICHA)
+// 2. ABA 01 — DASHBOARD
 // ==========================================================================
 async function refreshDashboardMetrics() {
   const totalStudents = allStudents.length;
   const kpiTotalEl = document.getElementById('kpi-total-students');
   if (kpiTotalEl) kpiTotalEl.textContent = String(totalStudents);
 
-  // Check-ins de hoje
   const now = new Date();
   const offset = now.getTimezoneOffset() * 60000;
   const todayISO = new Date(now.getTime() - offset).toISOString().split('T')[0];
@@ -235,7 +278,6 @@ async function refreshDashboardMetrics() {
   const kpiCheckinsEl = document.getElementById('kpi-today-checkins');
   if (kpiCheckinsEl) kpiCheckinsEl.textContent = String(todayAttendance?.length || 0);
 
-  // Alunos com ficha vs sem ficha
   const { data: activePlansData } = await supabase
     .from('workout_plans')
     .select('student_id');
@@ -249,16 +291,14 @@ async function refreshDashboardMetrics() {
   if (kpiWithWorkoutEl) kpiWithWorkoutEl.textContent = String(withWorkoutCount);
   if (kpiWithoutSubEl) kpiWithoutSubEl.textContent = `${withoutWorkoutList.length} aguardando ficha`;
 
-  // Contagem por tipo de plano
   const planCounts = {};
   AVAILABLE_PLANS.forEach(p => { planCounts[p] = 0; });
 
   allStudents.forEach(st => {
-    const plan = st.plan_type && planCounts.hasOwnProperty(st.plan_type) ? st.plan_type : 'Mensal';
+    const plan = st.plan_type && Object.prototype.hasOwnProperty.call(planCounts, st.plan_type) ? st.plan_type : 'Mensal';
     planCounts[plan] += 1;
   });
 
-  // Descobre o plano líder
   let topPlanName = '—';
   let topPlanCount = 0;
   Object.entries(planCounts).forEach(([planName, count]) => {
@@ -273,7 +313,6 @@ async function refreshDashboardMetrics() {
   if (kpiTopPlanEl) kpiTopPlanEl.textContent = topPlanName;
   if (kpiTopPlanSubEl) kpiTopPlanSubEl.textContent = `${topPlanCount} ${topPlanCount === 1 ? 'aluno' : 'alunos'} neste plano`;
 
-  // Renderiza barras de distribuição por plano
   const plansListEl = document.getElementById('plans-breakdown-list');
   if (plansListEl) {
     plansListEl.innerHTML = AVAILABLE_PLANS.map(planName => {
@@ -293,7 +332,6 @@ async function refreshDashboardMetrics() {
     }).join('');
   }
 
-  // Renderiza lista de alunos aguardando ficha
   const pendingListEl = document.getElementById('pending-students-list');
   if (pendingListEl) {
     if (!withoutWorkoutList.length) {
@@ -315,7 +353,7 @@ async function refreshDashboardMetrics() {
 }
 
 // ==========================================================================
-// 3. ABA 02 — CONSTRUTOR DE FICHAS (BUSCA APARELHOS + BUSCA MODELOS)
+// 3. ABA 02 — CONSTRUTOR DE FICHAS (COM FOCO / GRUPAMENTO POR DIA)
 // ==========================================================================
 function renderCatalogList() {
   if (!catalogItemsList) return;
@@ -347,7 +385,7 @@ function renderCatalogList() {
     <div class="lib-item-card">
       <div class="lib-item-info">
         <strong>#${escapeHtml(ex.machine_number)} — ${escapeHtml(ex.name)}</strong>
-        <span>${escapeHtml(ex.muscle_group)}</span>
+        <span>${escapeHtml(ex.muscle_group)}${ex.equipment_notes ? ` • Req: ${escapeHtml(ex.equipment_notes)}` : ''}</span>
       </div>
       <button type="button" class="btn-primary btn-sm" onclick="quickAddExercise('${ex.id}')">
         + Add
@@ -520,17 +558,71 @@ if (saveTemplateBtn) {
   });
 }
 
+function getActiveDivisionLabel() {
+  const existing = currentStudentPlans.find(p => p.division === activeDay && p.division_label);
+  return existing ? existing.division_label : '';
+}
+
+function syncDivisionLabelBar() {
+  const studentId = planStudentSelect?.value;
+  if (!divisionLabelBar || !divisionLabelTitle || !divisionLabelInput) return;
+
+  if (!studentId) {
+    divisionLabelBar.style.display = 'none';
+    return;
+  }
+
+  divisionLabelBar.style.display = 'flex';
+  const dayTitle = activeSplitType === 'Full body' ? 'Treino Único' : `Treino ${activeDay}`;
+  divisionLabelTitle.textContent = `Grupamento do ${dayTitle}:`;
+  divisionLabelInput.value = getActiveDivisionLabel();
+}
+
+// Salva o nome/grupamento do dia ativo (ex: "Peito e Tríceps") em todos os itens daquele dia
+if (divisionLabelInput) {
+  divisionLabelInput.addEventListener('change', async () => {
+    const studentId = planStudentSelect?.value;
+    if (!studentId) return;
+
+    const newLabel = divisionLabelInput.value.trim() || null;
+    const dayItems = currentStudentPlans.filter(p => p.division === activeDay);
+
+    if (!dayItems.length) {
+      showToast('Adicione um exercício', 'Inclua ao menos 1 exercício neste treino para salvar o nome do grupamento.', 'error');
+      return;
+    }
+
+    const { error } = await supabase
+      .from('workout_plans')
+      .update({ division_label: newLabel })
+      .eq('student_id', studentId)
+      .eq('division', activeDay);
+
+    if (error) {
+      showToast('Erro ao salvar grupamento', error.message, 'error');
+      return;
+    }
+
+    dayItems.forEach(item => { item.division_label = newLabel; });
+    renderDayTabs();
+    showToast('Grupamento Salvo!', `Treino ${activeDay} definido como "${newLabel || 'Padrão'}".`, 'success');
+  });
+}
+
 function renderDayTabs() {
   if (!dayTabsContainer) return;
   const days = SPLIT_DAYS[activeSplitType] || ['A', 'B', 'C'];
   if (!days.includes(activeDay)) activeDay = days[0];
 
   dayTabsContainer.innerHTML = days.map(day => {
-    const label = activeSplitType === 'Full body' ? 'Treino Único (Full body)' : `Treino ${day}`;
-    const count = currentStudentPlans.filter(p => p.division === day).length;
+    const dayItems = currentStudentPlans.filter(p => p.division === day);
+    const customLabel = dayItems.find(p => p.division_label)?.division_label;
+    const baseName = activeSplitType === 'Full body' ? 'Treino Único' : `Treino ${day}`;
+    const fullTitle = customLabel ? `${baseName} — ${customLabel}` : baseName;
+
     return `
       <button type="button" class="day-tab ${day === activeDay ? 'active' : ''}" data-day="${day}">
-        ${label} (${count})
+        ${escapeHtml(fullTitle)} (${dayItems.length})
       </button>
     `;
   }).join('');
@@ -539,9 +631,12 @@ function renderDayTabs() {
     btn.addEventListener('click', () => {
       activeDay = btn.dataset.day;
       renderDayTabs();
+      syncDivisionLabelBar();
       renderDayEditor();
     });
   });
+
+  syncDivisionLabelBar();
 }
 
 if (planSplitSelect) {
@@ -580,6 +675,7 @@ async function loadStudentPlans(studentId) {
       id,
       exercise_id,
       division,
+      division_label,
       sets,
       reps,
       rest_seconds,
@@ -587,7 +683,8 @@ async function loadStudentPlans(studentId) {
       exercises (
         name,
         machine_number,
-        muscle_group
+        muscle_group,
+        equipment_notes
       )
     `)
     .eq('student_id', studentId);
@@ -631,6 +728,7 @@ function renderDayEditor() {
         <div class="ex-name-col">
           <span class="badge badge-dark" style="margin-bottom:4px;">Máq. #${escapeHtml(ex?.machine_number || '—')}</span>
           <strong>${escapeHtml(ex?.name || 'Exercício')}</strong>
+          ${ex?.equipment_notes ? `<small style="display:block; color:var(--red-techgym); font-weight:600; font-size:0.72rem; margin-top:2px;">Usar: ${escapeHtml(ex.equipment_notes)}</small>` : ''}
         </div>
 
         <div>
@@ -672,10 +770,13 @@ window.quickAddExercise = async (exerciseId) => {
     return;
   }
 
+  const currentLabel = divisionLabelInput?.value.trim() || getActiveDivisionLabel() || null;
+
   const { error } = await supabase.from('workout_plans').insert([{
     student_id: studentId,
     exercise_id: exerciseId,
     division: activeDay,
+    division_label: currentLabel,
     sets: 3,
     reps: '10-12',
     rest_seconds: 60,
@@ -721,7 +822,7 @@ window.deleteWorkoutItem = async (itemId) => {
 };
 
 // ==========================================================================
-// 4. ABA 03 — GESTÃO DE ALUNOS (COM PLANO, VALIDAÇÃO, BUSCA, EDIÇÃO E EXCLUSÃO)
+// 4. ABA 03 — GESTÃO DE ALUNOS
 // ==========================================================================
 async function loadStudents() {
   const { data: profiles, error } = await supabase
@@ -998,7 +1099,7 @@ window.deleteStudent = async (studentId, studentName) => {
 };
 
 // ==========================================================================
-// 5. ABA 04 — APARELHOS AGRUPADOS POR GRUPO MUSCULAR + PESQUISA
+// 5. ABA 04 — APARELHOS AGRUPADOS POR GRUPO MUSCULAR + PESQUISA POR GRUPO
 // ==========================================================================
 const MUSCLE_GROUPS_ORDER = [
   'Peito',
@@ -1039,21 +1140,21 @@ async function loadExercises() {
 function renderGroupedExercises() {
   if (!exercisesGroupedContainer) return;
 
-  const term = exercisesTableSearch.trim().toLowerCase();
-  const filtered = allExercises.filter(ex =>
-    !term ||
-    String(ex.machine_number).toLowerCase().includes(term) ||
-    ex.name.toLowerCase().includes(term) ||
-    (ex.muscle_group && ex.muscle_group.toLowerCase().includes(term))
+  const globalTerm = exercisesTableSearch.trim().toLowerCase();
+  const filteredGlobal = allExercises.filter(ex =>
+    !globalTerm ||
+    String(ex.machine_number).toLowerCase().includes(globalTerm) ||
+    ex.name.toLowerCase().includes(globalTerm) ||
+    (ex.muscle_group && ex.muscle_group.toLowerCase().includes(globalTerm))
   );
 
-  if (!filtered.length) {
+  if (!filteredGlobal.length) {
     exercisesGroupedContainer.innerHTML = '<div class="empty-state">Nenhum aparelho ou exercício encontrado para esta pesquisa.</div>';
     return;
   }
 
   const grouped = {};
-  filtered.forEach(ex => {
+  filteredGlobal.forEach(ex => {
     const cat = normalizeMuscleCategory(ex.muscle_group);
     if (!grouped[cat]) grouped[cat] = [];
     grouped[cat].push(ex);
@@ -1062,28 +1163,47 @@ function renderGroupedExercises() {
   const categoriesToRender = [...MUSCLE_GROUPS_ORDER, 'Outros'].filter(cat => grouped[cat]?.length > 0);
 
   exercisesGroupedContainer.innerHTML = categoriesToRender.map(cat => {
-    const items = grouped[cat];
+    const allInCat = grouped[cat];
+    const groupTerm = (perGroupSearchTerms[cat] || '').trim().toLowerCase();
+    const visibleItems = allInCat.filter(ex =>
+      !groupTerm ||
+      String(ex.machine_number).toLowerCase().includes(groupTerm) ||
+      ex.name.toLowerCase().includes(groupTerm) ||
+      (ex.equipment_notes && ex.equipment_notes.toLowerCase().includes(groupTerm))
+    );
+
     return `
       <div class="muscle-group-card">
         <div class="muscle-group-header">
           <h4><span class="muscle-group-dot"></span> ${escapeHtml(cat)}</h4>
-          <span class="badge badge-red">${items.length} ${items.length === 1 ? 'aparelho' : 'aparelhos'}</span>
+          <span class="badge badge-red">${allInCat.length} ${allInCat.length === 1 ? 'aparelho' : 'aparelhos'}</span>
         </div>
+
+        <div class="muscle-group-search-bar">
+          <input type="search"
+                 placeholder="Filtrar em ${escapeHtml(cat)} por nº da máquina, exercício ou acessório..."
+                 value="${escapeHtml(perGroupSearchTerms[cat] || '')}"
+                 oninput="filterMuscleGroup('${escapeHtml(cat)}', this.value)">
+        </div>
+
         <div class="table-wrapper" style="border: none; border-radius: 0;">
           <table>
             <thead>
               <tr>
                 <th style="width: 130px;">Nº Máquina</th>
-                <th>Exercício</th>
+                <th>Exercício &amp; Acessório</th>
                 <th style="width: 130px;">Vídeo</th>
                 <th style="width: 170px;">Ações</th>
               </tr>
             </thead>
             <tbody>
-              ${items.map(ex => `
+              ${visibleItems.length ? visibleItems.map(ex => `
                 <tr>
                   <td><span class="badge badge-dark">Máq. #${escapeHtml(ex.machine_number)}</span></td>
-                  <td><strong>${escapeHtml(ex.name)}</strong></td>
+                  <td>
+                    <strong>${escapeHtml(ex.name)}</strong>
+                    ${ex.equipment_notes ? `<div style="margin-top:4px;"><span class="badge badge-red">Requer: ${escapeHtml(ex.equipment_notes)}</span></div>` : ''}
+                  </td>
                   <td>
                     ${ex.video_url
                       ? `<a href="${escapeHtml(ex.video_url)}" target="_blank" rel="noopener noreferrer" class="badge badge-red">Ver Vídeo</a>`
@@ -1094,7 +1214,7 @@ function renderGroupedExercises() {
                     <button type="button" class="btn-sm btn-danger" onclick="deleteExercise('${ex.id}', '${escapeHtml(ex.name)}')">Excluir</button>
                   </td>
                 </tr>
-              `).join('')}
+              `).join('') : `<tr><td colspan="4" class="empty-state">Nenhum aparelho encontrado em ${escapeHtml(cat)}.</td></tr>`}
             </tbody>
           </table>
         </div>
@@ -1102,6 +1222,19 @@ function renderGroupedExercises() {
     `;
   }).join('');
 }
+
+window.filterMuscleGroup = (category, value) => {
+  perGroupSearchTerms[category] = value;
+  renderGroupedExercises();
+  // Mantém o foco no input daquele grupo após re-renderizar
+  const inputs = document.querySelectorAll('.muscle-group-search-bar input');
+  inputs.forEach(inp => {
+    if (inp.placeholder.includes(`em ${category} `)) {
+      inp.focus();
+      inp.setSelectionRange(inp.value.length, inp.value.length);
+    }
+  });
+};
 
 if (exercisesTableSearchInput) {
   exercisesTableSearchInput.addEventListener('input', (e) => {
@@ -1116,13 +1249,16 @@ if (exerciseForm) {
     clearFormErrors([
       ['exercise-machine', 'err-exercise-machine'],
       ['exercise-name', 'err-exercise-name'],
-      ['exercise-video', 'err-exercise-video']
+      ['exercise-video', 'err-exercise-video'],
+      ['exercise-accessory-text', 'err-exercise-accessory']
     ]);
 
     const machineNumber = document.getElementById('exercise-machine').value.trim().toUpperCase();
     const name = document.getElementById('exercise-name').value.trim();
     const muscleGroup = document.getElementById('exercise-muscle').value;
     const videoUrl = document.getElementById('exercise-video').value.trim();
+    const needsAccessory = needsAccessoryCheckbox?.checked || false;
+    const equipmentNotes = needsAccessory ? (accessoryTextInput?.value.trim() || '') : null;
 
     let hasError = false;
 
@@ -1141,6 +1277,11 @@ if (exerciseForm) {
       hasError = true;
     }
 
+    if (needsAccessory && equipmentNotes.length < 2) {
+      setFieldError('exercise-accessory-text', 'err-exercise-accessory', 'Descreva o acessório necessário (ex: Halteres, Barra W, Corda).');
+      hasError = true;
+    }
+
     if (hasError) {
       showToast('Campos Inválidos', 'Corrija os campos destacados em vermelho antes de salvar.', 'error');
       return;
@@ -1156,7 +1297,8 @@ if (exerciseForm) {
       machine_number: machineNumber,
       name,
       muscle_group: muscleGroup,
-      video_url: videoUrl || null
+      video_url: videoUrl || null,
+      equipment_notes: equipmentNotes || null
     }]);
 
     if (submitBtn) {
@@ -1170,6 +1312,7 @@ if (exerciseForm) {
     }
 
     exerciseForm.reset();
+    if (accessoryWrapper) accessoryWrapper.style.display = 'none';
     showToast('Aparelho Cadastrado!', `Máq. #${machineNumber} — ${name} adicionado em ${muscleGroup}.`, 'success');
     await loadExercises();
   });
@@ -1182,7 +1325,8 @@ window.openEditExerciseModal = (exerciseId) => {
   clearFormErrors([
     ['edit-exercise-machine', 'err-edit-exercise-machine'],
     ['edit-exercise-name', 'err-edit-exercise-name'],
-    ['edit-exercise-video', 'err-edit-exercise-video']
+    ['edit-exercise-video', 'err-edit-exercise-video'],
+    ['edit-exercise-accessory-text', 'err-edit-exercise-accessory']
   ]);
 
   document.getElementById('edit-exercise-id').value = ex.id;
@@ -1190,6 +1334,12 @@ window.openEditExerciseModal = (exerciseId) => {
   document.getElementById('edit-exercise-name').value = ex.name || '';
   document.getElementById('edit-exercise-muscle').value = normalizeMuscleCategory(ex.muscle_group);
   document.getElementById('edit-exercise-video').value = ex.video_url || '';
+
+  const hasNotes = Boolean(ex.equipment_notes);
+  if (editNeedsAccessoryCheckbox) editNeedsAccessoryCheckbox.checked = hasNotes;
+  if (editAccessoryWrapper) editAccessoryWrapper.style.display = hasNotes ? 'flex' : 'none';
+  if (editAccessoryTextInput) editAccessoryTextInput.value = ex.equipment_notes || '';
+
   editExerciseModal.style.display = 'flex';
 };
 
@@ -1203,7 +1353,8 @@ if (editExerciseForm) {
     clearFormErrors([
       ['edit-exercise-machine', 'err-edit-exercise-machine'],
       ['edit-exercise-name', 'err-edit-exercise-name'],
-      ['edit-exercise-video', 'err-edit-exercise-video']
+      ['edit-exercise-video', 'err-edit-exercise-video'],
+      ['edit-exercise-accessory-text', 'err-edit-exercise-accessory']
     ]);
 
     const id = document.getElementById('edit-exercise-id').value;
@@ -1211,6 +1362,8 @@ if (editExerciseForm) {
     const name = document.getElementById('edit-exercise-name').value.trim();
     const muscleGroup = document.getElementById('edit-exercise-muscle').value;
     const videoUrl = document.getElementById('edit-exercise-video').value.trim();
+    const needsAcc = editNeedsAccessoryCheckbox?.checked || false;
+    const equipmentNotes = needsAcc ? (editAccessoryTextInput?.value.trim() || '') : null;
 
     let hasError = false;
     if (!machineNumber) {
@@ -1225,6 +1378,10 @@ if (editExerciseForm) {
       setFieldError('edit-exercise-video', 'err-edit-exercise-video', 'Link do YouTube inválido.');
       hasError = true;
     }
+    if (needsAcc && equipmentNotes.length < 2) {
+      setFieldError('edit-exercise-accessory-text', 'err-edit-exercise-accessory', 'Descreva o acessório necessário.');
+      hasError = true;
+    }
 
     if (hasError) return;
 
@@ -1234,7 +1391,8 @@ if (editExerciseForm) {
         machine_number: machineNumber,
         name,
         muscle_group: muscleGroup,
-        video_url: videoUrl || null
+        video_url: videoUrl || null,
+        equipment_notes: equipmentNotes || null
       })
       .eq('id', id);
 

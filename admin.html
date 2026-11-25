@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Techgym Academia — Painel Administrativo</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%2316171A'/><path d='M24 30h52v12H56v32H44V42H24z' fill='%23D6242A'/></svg>">
   <link rel="stylesheet" href="./css/global.css">
   <link rel="stylesheet" href="./css/admin.css">
 </head>
@@ -13,9 +14,19 @@
   <header class="topbar">
     <div class="topbar-inner">
       <div class="brand-box">
-        <img src="./assets/logo-techgym.png" alt="Techgym Academia" class="brand-logo"
-             onerror="this.style.display='none'; document.getElementById('logo-fallback').style.display='block';">
-        <span id="logo-fallback" class="logo-text-fallback" style="display:none;">TECH<span>Gym</span></span>
+        <div class="brand-svg-logo">
+          <div class="brand-svg-icon" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <path d="M3 5H21V8.5H13.8V19H10.2V8.5H3V5Z" fill="#D6242A"/>
+              <rect x="3" y="16" width="5" height="3" rx="1" fill="#FFFFFF"/>
+              <rect x="16" y="16" width="5" height="3" rx="1" fill="#FFFFFF"/>
+            </svg>
+          </div>
+          <div class="brand-svg-text">
+            <strong>TECH<span>GYM</span></strong>
+            <small>Academia</small>
+          </div>
+        </div>
         <span class="env-badge">Painel do Instrutor</span>
       </div>
 
@@ -26,7 +37,7 @@
   </header>
 
   <div class="dashboard-shell">
-    <!-- Menu Flutuante com 4 Opções -->
+    <!-- Menu Flutuante -->
     <aside class="nav-card">
       <span class="nav-section-title">MENU</span>
 
@@ -67,7 +78,7 @@
 
     <main class="content-card">
       <!-- ================================================================
-           ABA 01: DASHBOARD (VISÃO GERAL E PLANOS)
+           ABA 01: DASHBOARD
            ================================================================ -->
       <section id="tab-dashboard" class="tab-panel active">
         <div class="content-header">
@@ -181,6 +192,13 @@
 
           <div class="days-workspace">
             <div class="day-tabs-bar" id="day-tabs-container"></div>
+
+            <!-- Campo para descrever o grupamento muscular do dia selecionado -->
+            <div class="division-label-bar" id="division-label-bar" style="display: none;">
+              <label for="day-division-label" id="day-division-label-title">Grupamento do Treino A:</label>
+              <input type="text" id="day-division-label" placeholder="Ex: Peito e Tríceps, Costas e Bíceps, Inferiores...">
+            </div>
+
             <div id="day-exercises-editor" class="plan-rows-list">
               <div class="empty-state">Selecione um aluno acima para começar a montar ou importar a ficha.</div>
             </div>
@@ -189,7 +207,7 @@
       </section>
 
       <!-- ================================================================
-           ABA 03: ALUNOS (COM PLANO, VALIDAÇÃO INLINE, PESQUISA, EDIÇÃO E EXCLUSÃO)
+           ABA 03: ALUNOS
            ================================================================ -->
       <section id="tab-alunos" class="tab-panel">
         <div class="content-header">
@@ -259,7 +277,7 @@
       </section>
 
       <!-- ================================================================
-           ABA 04: APARELHOS
+           ABA 04: APARELHOS (CHECKBOX DE ACESSÓRIO + BUSCA POR GRUPO)
            ================================================================ -->
       <section id="tab-aparelhos" class="tab-panel">
         <div class="content-header">
@@ -278,7 +296,7 @@
             </div>
             <div class="form-group">
               <label for="exercise-name">Nome do Exercício *</label>
-              <input type="text" id="exercise-name" placeholder="Ex: Supino Reto Máquina">
+              <input type="text" id="exercise-name" placeholder="Ex: Elevação Lateral">
               <small class="field-error-msg" id="err-exercise-name"></small>
             </div>
             <div class="form-group">
@@ -299,6 +317,20 @@
               <small class="field-error-msg" id="err-exercise-video"></small>
             </div>
           </div>
+
+          <div class="accessory-toggle-box">
+            <label class="checkbox-row">
+              <input type="checkbox" id="exercise-needs-accessory">
+              <span>Precisa de acessório ou equipamento específico para executar?</span>
+            </label>
+
+            <div id="exercise-accessory-wrapper" class="form-group" style="display: none;">
+              <label for="exercise-accessory-text">Descreva o que é necessário *</label>
+              <input type="text" id="exercise-accessory-text" placeholder="Ex: Par de halteres, Barra W, Corda, Banco inclinado...">
+              <small class="field-error-msg" id="err-exercise-accessory"></small>
+            </div>
+          </div>
+
           <div class="builder-footer">
             <button type="submit" class="btn-primary">Salvar Aparelho / Exercício</button>
           </div>
@@ -308,7 +340,7 @@
 
         <div class="table-toolbar">
           <h3>Catálogo Agrupado por Grupo Muscular</h3>
-          <input type="search" id="exercises-table-search" placeholder="Pesquisar por nº da máquina, exercício ou grupo...">
+          <input type="search" id="exercises-table-search" placeholder="Busca geral em todos os grupos...">
         </div>
 
         <div id="exercises-grouped-container" class="muscle-groups-stack">
@@ -390,6 +422,18 @@
           <input type="url" id="edit-exercise-video" placeholder="https://www.youtube.com/watch?v=...">
           <small class="field-error-msg" id="err-edit-exercise-video"></small>
         </div>
+
+        <label class="checkbox-row" style="margin-top: 4px;">
+          <input type="checkbox" id="edit-exercise-needs-accessory">
+          <span>Precisa de acessório específico?</span>
+        </label>
+
+        <div id="edit-exercise-accessory-wrapper" class="form-group" style="display: none;">
+          <label for="edit-exercise-accessory-text">Descreva o que é necessário *</label>
+          <input type="text" id="edit-exercise-accessory-text" placeholder="Ex: Par de halteres, Corda...">
+          <small class="field-error-msg" id="err-edit-exercise-accessory"></small>
+        </div>
+
         <div class="admin-modal-actions">
           <button type="button" class="btn-outline" onclick="closeExerciseModal()">Cancelar</button>
           <button type="submit" class="btn-primary">Salvar Alterações</button>
