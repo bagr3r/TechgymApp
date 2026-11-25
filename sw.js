@@ -1,4 +1,4 @@
-const CACHE_NAME = 'techgym-network-first-v12';
+const CACHE_NAME = 'techgym-network-first-v15';
 
 const CORE_ASSETS = [
   './',
@@ -7,10 +7,17 @@ const CORE_ASSETS = [
   './aluno.html',
   './css/global.css',
   './css/admin.css',
+  './css/aluno.css',
+  './css/login.css',
   './js/config.js',
   './js/auth.js',
   './js/admin.js',
-  './js/aluno.js'
+  './js/admin/ui.js',
+  './js/admin/dashboard.js',
+  './js/admin/workoutBuilder.js',
+  './js/admin/students.js',
+  './js/admin/exercises.js',
+  './js/student.js'
 ];
 
 self.addEventListener('install', (event) => {
